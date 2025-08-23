@@ -1,0 +1,104 @@
+{% load static %}
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="upperSection">
+        <div class="logo">
+          <i data-lucide="user-round-search"></i>
+          <h2 class="poppins-semibold">Find<span>Me</span></h2>
+        </div>
+        <nav class="nav">
+          <ul>
+            <li class="active">
+              <a href="#">
+                <i data-lucide="layout-grid"></i>
+                <span class="poppins-regular">Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i data-lucide="file"></i>
+                <span class="poppins-regular">Reports</span>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i data-lucide="briefcase"></i>
+                <span class="poppins-regular">Cases</span>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i data-lucide="bell"></i>
+                <span class="poppins-regular">Notification</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      <div class="settings">
+        <button onclick="toggleSubMenu(this)" class="user">
+          <div class="right">
+            <div class="userLogo">
+              <!-- <i data-lucide="-round"></i> -->
+              <span id="userInitial" class="poppins-semibold"></span>
+            </div>
+            <h2 class="poppins-regular">John Doe</h2>
+          </div>
+          <div class="left">
+            <i data-lucide="chevron-down"></i>
+          </div>
+        </button>
+        <ul class="sub-menu">
+          <div>
+            <li>
+              <a href="#" class="poppins-regular">
+                <i data-lucide="user-round"></i>
+                <span class="poppins-regular">Account</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" class="poppins-regular">
+                <i data-lucide="log-out"></i>
+                <span class="poppins-regular">Logout</span>
+              </a>
+            </li>
+          </div>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      lucide.createIcons();
+
+      const userName = "John Doe"; // dynamically from backend later
+      document.getElementById("userInitial").textContent = userName
+        .charAt(0)
+        .toUpperCase();
+
+      const toggleSubMenu = (button) => {
+        button.nextElementSibling.classList.toggle("show");
+        button.classList.toggle("rotate");
+      };
+    </script>
+
+    {% if debug %}
+    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+    {% endif %}
+  </body>
+</html>

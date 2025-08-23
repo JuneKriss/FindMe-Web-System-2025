@@ -1,0 +1,175 @@
+{% load static %}
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <title>Dashboard</title>
+  </head>
+  <body>
+    <div class="container">
+      {% include 'sidebar.html' %}
+      <div class="main">
+        <div class="title">
+          <h2 class="poppins-medium">Dashboard</h2>
+        </div>
+        <section class="counts">
+          <div class="countBox">
+            <i data-lucide="info"></i>
+            <div class="texts">
+              <span class="poppins-regular">Total Count</span>
+              <h2 class="poppins-semibold">500</h2>
+            </div>
+          </div>
+          <div class="countBox">
+            <i data-lucide="info"></i>
+            <div class="texts">
+              <span class="poppins-regular">Total Count</span>
+              <h2 class="poppins-semibold">500</h2>
+            </div>
+          </div>
+          <div class="countBox">
+            <i data-lucide="info"></i>
+            <div class="texts">
+              <span class="poppins-regular">Total Count</span>
+              <h2 class="poppins-semibold">500</h2>
+            </div>
+          </div>
+          <div class="countBox">
+            <i data-lucide="info"></i>
+            <div class="texts">
+              <span class="poppins-regular">Total Count</span>
+              <h2 class="poppins-semibold">500</h2>
+            </div>
+          </div>
+        </section>
+        <section class="recentReports">
+          <h2 class="sectionTitle poppins-bold">Recent Reports</h2>
+          <div class="reportsContainer">
+            {% for i in "1234"|make_list %}
+            <div class="reportCard">
+              <div class="reportHead">
+                <span class="poppins-regular">Incident ID: #</span>
+                <div class="statusBox">
+                  <span class="poppins-regular">Open</span>
+                </div>
+              </div>
+              <div class="reportImg">
+                <img
+                  src="{% static 'images/samplePerson.jpeg' %}"
+                  onclick="openImageModal(this)"
+                  loading="lazy"
+                />
+              </div>
+              <div class="reportInfo">
+                <h3 class="poppins-regular">John Doe</h3>
+                <p class="poppins-regular">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                  Mauris id tortor turpis. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit. Mauris id tortor turpis.
+                </p>
+                <div class="bottomContainer">
+                  <div class="details">
+                    <div class="iconGroup">
+                      <i data-lucide="map-pin"></i>
+                      <span class="poppins-regular">Barangay LA</span>
+                    </div>
+                    <div class="iconGroup">
+                      <i data-lucide="calendar"></i>
+                      <span class="poppins-regular">August 21, 2025</span>
+                    </div>
+                  </div>
+                  <a href="#">
+                    <span class="poppins-regular">More</span>
+                    <i data-lucide="arrow-right"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+        <section class="cases">
+          <h2 class="sectionTitle poppins-bold">Recent Cases</h2>
+          <div class="table-container">
+            <table id="recentCases">
+              <thead>
+                <tr>
+                  <th class="poppins-medium">ID</th>
+                  <th class="poppins-medium">Reporter</th>
+                  <th class="poppins-medium">Status</th>
+                  <th class="poppins-medium">Last Update</th>
+                  <th class="poppins-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for i in "12345"|make_list %}
+                <tr>
+                  <td class="poppins-regular">001</td>
+                  <td class="poppins-regular">Ferryl Johnson</td>
+                  <td class="poppins-regular ongoing">Ongoing</td>
+                  <td class="poppins-regular">February 30, 2024</td>
+                  <td>
+                    <div class="actionIcon">
+                      <i data-lucide="pen"></i>
+                      <i data-lucide="info"></i>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div id="imgModal" class="img-modal">
+        <span class="close" onclick="closeImageModal()">&times;</span>
+        <img class="img-modal-content" id="modalImg" />
+      </div>
+    </div>
+
+    <script>
+      lucide.createIcons();
+
+      const modal = document.getElementById("imgModal");
+      const modalImg = document.getElementById("modalImg");
+
+      window.addEventListener("load", () => {
+        modal.style.display = "none";
+      });
+
+      function openImageModal(imgElement) {
+        modal.style.display = "flex";
+        modalImg.src = imgElement.src;
+      }
+
+      function closeImageModal() {
+        modal.style.display = "none";
+      }
+
+      modal.addEventListener("click", function (e) {
+        if (e.target === this) {
+          closeImageModal();
+        }
+      });
+
+      modal.removeEventListener("click", backgroundClickHandler);
+    </script>
+
+    {% if debug %}
+    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+    {% endif %}
+  </body>
+</html>

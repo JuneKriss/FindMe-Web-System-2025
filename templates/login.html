@@ -10,12 +10,66 @@
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="static/css/login.css" />
+    <link rel="stylesheet" href="{% static 'css/login.css' %}" />
     <link rel="stylesheet" href="static/css/fonts.css" />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <title>Login</title>
   </head>
   <body>
-    <h1 class="poppins-semibold">Hello World</h1>
+    <div class="container">
+      <div class="loginBox">
+        <div class="logo">
+          <i data-lucide="user-round-search"></i>
+          <div class="logoText">
+            <h3 class="poppins-medium">Log in to</h3>
+            <h2 class="poppins-semibold">FindMe</h2>
+          </div>
+        </div>
+        <p class="poppins-medium">
+          Enter your email and password to access your account
+        </p>
+        <form action="#" method="post">
+          <div class="inputFields">
+            <div class="inputBox">
+              <label for="email" class="poppins-regular">Email</label>
+              <input
+                type="text"
+                id="email"
+                name="email"
+                class="poppins-regular"
+                required
+              />
+            </div>
+            <div class="inputBox">
+              <label for="password" class="poppins-regular">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="poppins-regular"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="submitButton">
+            <button type="submit" class="poppins-regular">Login</button>
+            <!-- <p class="poppins-regular">
+              Don't have an account account? <a href="#">Sign up</a>
+            </p> -->
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      lucide.createIcons();
+    </script>
+
+    {% if debug %}
+    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+    {% endif %}
   </body>
 </html>
