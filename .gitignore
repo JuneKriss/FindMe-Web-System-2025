@@ -1,18 +1,38 @@
-# Virtual environment
-../findme-env/
+# Virtual environments
 venv/
 env/
+findme-env/
+../findme-env/
 
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.sqlite3-journal
 
-# SQLite database
+# Django stuff
 db.sqlite3
+media/
+staticfiles/
+*.log
 
-# Static files collected by Django
-/staticfiles/
+# Environment variables
+.env
+*.env
 
-# IDE settings
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE / editor
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# Testing / coverage
+htmlcov/
+.coverage
+.tox/
+.pytest_cache/
