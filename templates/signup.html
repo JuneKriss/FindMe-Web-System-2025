@@ -17,12 +17,12 @@
     <!-- Icon -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <title>Login</title>
+    <title>Signup</title>
   </head>
   <body>
     <div class="container">
       {% if messages %}
-      <div class="messages">
+      <div class="messages" role="status" aria-live="polite">
         {% for message in messages %}
         <p class="message poppins-regular {{ message.tags|default:'info' }}">
           {{ message|safe }}
@@ -30,24 +30,34 @@
         {% endfor %}
       </div>
       {% endif %}
-      <div class="formBox login">
+      <div class="formBox signup">
         <div class="logo">
           <i data-lucide="user-round-search"></i>
           <div class="logoText">
-            <h3 class="poppins-medium">Log in to</h3>
+            <h3 class="poppins-medium">Sign up to</h3>
             <h2 class="poppins-semibold">FindMe</h2>
           </div>
         </div>
         <p class="poppins-medium">
-          Enter your email and password to access your account
+          Fill in the required information to create your account
         </p>
-        <form action="{% url 'login' %}" method="post">
+        <form id="signupForm" method="post" action="{% url 'signup' %}">
           {% csrf_token %}
           <div class="inputFields">
             <div class="inputBox">
-              <label for="email" class="poppins-regular">Email</label>
+              <label for="username" class="poppins-regular">Username</label>
               <input
                 type="text"
+                id="username"
+                name="username"
+                class="poppins-regular"
+                required
+              />
+            </div>
+            <div class="inputBox">
+              <label for="email" class="poppins-regular">Email</label>
+              <input
+                type="email"
                 id="email"
                 name="email"
                 class="poppins-regular"
@@ -67,10 +77,10 @@
           </div>
 
           <div class="submitButton">
-            <button type="submit" class="poppins-regular">Log in</button>
+            <button type="submit" class="poppins-regular">Sign up</button>
             <p class="poppins-regular">
-              Don't have an account?
-              <a href="{% url 'signup-page' %}">Sign up</a>
+              Already have an account?
+              <a href="{% url 'login-page' %}">Log in</a>
             </p>
           </div>
         </form>
@@ -82,18 +92,12 @@
 
       const messages = document.querySelector(".messages");
       if (messages) {
-        // Check if this message contains a link
-        const hasLink = messages.querySelector("a") !== null;
-
-        // Set different durations
-        const displayDuration = hasLink ? 10000 : 5000; // 10s if link, else 5s
-
         setTimeout(() => {
           messages.classList.add("hide");
           setTimeout(() => {
             messages.remove();
-          }, 500); // match your CSS transition duration
-        }, displayDuration);
+          }, 500);
+        }, 5000);
       }
     </script>
 

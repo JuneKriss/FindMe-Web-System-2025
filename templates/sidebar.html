@@ -24,14 +24,15 @@
         </div>
         <nav class="nav">
           <ul>
-            <li class="active">
-              <a href="#">
+            <li class="{% if request.path == '/dashboard/' %}active{% endif %}">
+              <a href="{% url 'dashboard' %}">
                 <i data-lucide="layout-grid"></i>
                 <span class="poppins-regular">Dashboard</span>
               </a>
             </li>
-            <li>
-              <a href="#">
+
+            <li class="{% if request.path == '/reports/' %}active{% endif %}">
+              <a href="{% url 'reports' %}">
                 <i data-lucide="file"></i>
                 <span class="poppins-regular">Reports</span>
               </a>
@@ -58,7 +59,7 @@
               <!-- <i data-lucide="-round"></i> -->
               <span id="userInitial" class="poppins-semibold"></span>
             </div>
-            <h2 class="poppins-regular">John Doe</h2>
+            <h2 class="poppins-regular">{{ username }}</h2>
           </div>
           <div class="left">
             <i data-lucide="chevron-down"></i>
@@ -73,7 +74,7 @@
               </a>
             </li>
             <li>
-              <a href="#" class="poppins-regular">
+              <a href="{% url 'logout' %}" class="poppins-regular">
                 <i data-lucide="log-out"></i>
                 <span class="poppins-regular">Logout</span>
               </a>
@@ -86,7 +87,7 @@
     <script>
       lucide.createIcons();
 
-      const userName = "John Doe"; // dynamically from backend later
+      const userName = "{{ username|escapejs }}";
       document.getElementById("userInitial").textContent = userName
         .charAt(0)
         .toUpperCase();

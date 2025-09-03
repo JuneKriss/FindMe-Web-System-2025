@@ -158,6 +158,7 @@ section {
   line-height: 1.5em;
   display: -webkit-box;
   -webkit-line-clamp: 3; /* number of lines before cutting */
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
