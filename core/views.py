@@ -11,20 +11,56 @@ from datetime import timedelta
 
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import action 
+from rest_framework.response import Response 
+from rest_framework import status
+
+#SERIALIZER
 from .serializers import AccountSerializer
+from .serializers import ReportSerializer
+
+#MODELS
+from .models import Account
+from .models import ReportCase
 
 # API
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'account_id'  # <-- add this
+
+    @action(detail=False, methods=['patch'], url_path='update-role')
+    def update_role(self, request):
+        role = request.data.get('role')
+        if role not in ['family', 'volunteer']:
+            return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        user.role = role
+        user.save(update_fields=['role'])
+
+        return Response({'role': user.role}, status=status.HTTP_200_OK)
     
-    def get_permissions(self):
-        if self.action == 'create':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+    @action(detail=False, methods=['get'], url_path='me')
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+    
+
+class ReportViewSet(viewsets.ModelViewSet):
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Only return reports created by the logged-in user
+        return ReportCase.objects.filter(reporter=self.request.user).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        # Reporter is handled in serializer.create(), so this is optional
+        serializer.save()
 
 # API
-
 
 # WEB
 
