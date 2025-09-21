@@ -16,19 +16,25 @@ from rest_framework.response import Response
 from rest_framework import status
 
 #SERIALIZER
-from .serializers import AccountSerializer
-from .serializers import ReportSerializer
+from .serializers import AccountSerializer , FamilySerializer, VolunteerSerializer
+from .serializers import ReportSerializer, ReportMediaSerializer
 
 #MODELS
-from .models import Account
-from .models import ReportCase
+from .models import Account, Family, Volunteer
+from .models import ReportCase, ReportMedia
 
 # API
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'account_id'  # <-- add this
+    lookup_field = 'account_id' 
+
+    def get_permissions(self):
+        # Anyone can register
+        if self.action == 'create':
+            return [AllowAny()]
+        return super().get_permissions()
 
     @action(detail=False, methods=['patch'], url_path='update-role')
     def update_role(self, request):
@@ -47,18 +53,50 @@ class AccountViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
     
+class FamilyViewSet(viewsets.ModelViewSet):
+    serializer_class = FamilySerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return Family.objects.filter(account=self.request.user)
+    def perform_create(self, serializer):
+        serializer.save(account=self.request.user)
+    
+class VolunteerViewSet(viewsets.ModelViewSet):
+    serializer_class = VolunteerSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return Volunteer.objects.filter(account=self.request.user)
+    def perform_create(self, serializer):
+        serializer.save(account=self.request.user)
 
 class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Only return reports created by the logged-in user
-        return ReportCase.objects.filter(reporter=self.request.user).order_by("-created_at")
+        user = self.request.user
+        if user.role == "volunteer":
+            # Volunteers see all reports
+            return ReportCase.objects.all().order_by("-created_at")
+        else:
+            # Families only see their own reports
+            return ReportCase.objects.filter(reporter=user).order_by("-created_at")
 
     def perform_create(self, serializer):
-        # Reporter is handled in serializer.create(), so this is optional
-        serializer.save()
+        serializer.save(reporter=self.request.user)
+
+
+class ReportMediaViewSet(viewsets.ModelViewSet):
+    serializer_class = ReportMediaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ReportMedia.objects.filter(report__reporter=self.request.user)
+
+    def perform_create(self, serializer):
+        file = self.request.FILES.get("file")
+        file_type = file.content_type if file else None
+        serializer.save(file_type=file_type)
 
 # API
 
