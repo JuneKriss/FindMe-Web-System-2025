@@ -1,0 +1,152 @@
+{% load static %}
+
+<div id="addReportModal" class="side-modal show">
+  <div class="side-modal-content">
+    <span class="close">&times;</span>
+    <div class="side-modal-head">
+      <div class="outer-circle">
+        <div class="inner-circle">
+          <div class="icon">
+            <i data-lucide="file-plus"></i>
+          </div>
+        </div>
+      </div>
+      <div class="textContent">
+        <h2 class="poppins-medium">Create a Report</h2>
+        <p class="poppins-regular">
+          Complete the form below to register your report.
+        </p>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'submit_report' %}">
+      {% csrf_token %}
+      <div class="side-modalSection">
+        <h3 class="poppins-medium">Missing Person Information</h3>
+        <div class="two-column">
+          <div class="detail">
+            <label for="first_name" class="poppins-regular">First Name</label>
+            <input
+              type="text"
+              id="first_name"
+              name="first_name"
+              class="poppins-regular"
+            />
+          </div>
+          <div class="detail">
+            <label for="last_name" class="poppins-regular">Last Name</label>
+            <input
+              type="text"
+              id="last_name"
+              name="last_name"
+              class="poppins-regular"
+            />
+          </div>
+        </div>
+        <div class="two-column">
+          <div class="detail">
+            <label for="age" class="poppins-regular">Age</label>
+            <input type="number" id="age" name="age" class="poppins-regular" />
+          </div>
+          <div class="detail">
+            <label for="gender" class="poppins-regular">Gender</label>
+            <select name="gender" id="gender" required>
+              <option value="" disabled selected class="poppins-regular">
+                Select gender
+              </option>
+              <option value="Male" class="poppins-regular">Male</option>
+              <option value="Female" class="poppins-regular">Female</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-modalSection">
+        <h3 class="poppins-medium">Last Seen</h3>
+        <div class="two-column">
+          <div class="detail">
+            <label for="last_seen_date" class="poppins-regular">Date</label>
+            <input
+              type="date"
+              id="last_seen_date"
+              name="last_seen_date"
+              class="poppins-regular"
+            />
+          </div>
+          <div class="detail">
+            <label for="last_seen_time" class="poppins-regular">Time</label>
+            <input
+              type="time"
+              id="last_seen_time"
+              name="last_seen_time"
+              class="poppins-regular"
+            />
+          </div>
+        </div>
+        <div class="detail">
+          <label for="clothing" class="poppins-regular">Clothing</label>
+          <input
+            type="text"
+            id="clothing"
+            name="clothing"
+            class="poppins-regular"
+          />
+        </div>
+        <div class="detail">
+          <label for="location" class="poppins-regular">Location</label>
+          <textarea
+            id="location"
+            name="location"
+            rows="3"
+            class="poppins-regular"
+          ></textarea>
+        </div>
+      </div>
+      <div class="side-modalSection">
+        <h3 class="poppins-medium">Description</h3>
+        <div class="detail">
+          <label for="notes" class="poppins-regular">Notes</label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="6"
+            class="poppins-regular"
+          ></textarea>
+        </div>
+      </div>
+      <div class="side-modalSection">
+        <h3 class="poppins-medium">Media</h3>
+        <div class="detail">
+          <label for="images" class="poppins-regular">Image</label>
+          <div class="upload-box">
+            <label for="images" class="upload-label">
+              <div class="upload-content" id="uploadContent">
+                <i data-lucide="images"></i>
+                <p class="poppins-regular">
+                  Click to
+                  <span class="browse poppins-medium">Browse</span> and upload
+                  images
+                </p>
+                <small class="poppins-regular">PNG, JPG</small>
+              </div>
+            </label>
+            <input
+              type="file"
+              id="images"
+              name="images"
+              accept="image/*"
+              multiple
+              required
+              hidden
+            />
+          </div>
+        </div>
+      </div>
+      <div class="side-modalSection">
+        <div class="two-column">
+          <button type="submit" class="poppins-regular">Submit Report</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

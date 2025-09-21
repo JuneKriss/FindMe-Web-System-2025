@@ -1,0 +1,170 @@
+{% load static %}
+
+<div id="infoModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div class="modalHead">
+      <h3 class="poppins-medium">Report ID #</h3>
+      <span class="poppins-regular status-badge pending">
+        <span class="status-dot"></span>
+        Pending
+      </span>
+    </div>
+    <div class="modalContainer">
+      <div class="left">
+        <div class="modalSection">
+          <h3 class="poppins-medium">Media</h3>
+          <div class="mediaContainer">
+            <button class="mediaArrow" id="prevArrow">
+              <i data-lucide="chevron-left"></i>
+            </button>
+
+            <div class="media">
+              <img
+                src="{% static 'images/samplePerson.jpeg' %}"
+                alt="Report image"
+              />
+              <!-- or -->
+              <!-- <video src="{% static 'videos/sample.mp4' %}" controls></video> -->
+            </div>
+
+            <button class="mediaArrow" id="nextArrow">
+              <i data-lucide="chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Dots -->
+          <div class="mediaDots">
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="modalSection">
+          <h3 class="poppins-medium">Personal Information</h3>
+          <div class="detail">
+            <label for="fullName" class="poppins-regular">Full Name</label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+
+          <div class="two-column">
+            <div class="detail">
+              <label for="age" class="poppins-regular">Age</label>
+              <input
+                type="text"
+                id="age"
+                name="age"
+                class="poppins-regular"
+                readonly
+              />
+            </div>
+            <div class="detail">
+              <label for="gender" class="poppins-regular">Gender</label>
+              <input
+                type="text"
+                id="gender"
+                name="gender"
+                class="poppins-regular"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="modalSection">
+          <h3 class="poppins-medium">Last Seen</h3>
+          <div class="two-column">
+            <div class="detail">
+              <label for="last_seen_date" class="poppins-regular">Date</label>
+              <input
+                type="date"
+                id="last_seen_date"
+                name="last_seen_date"
+                class="poppins-regular"
+                readonly
+              />
+            </div>
+            <div class="detail">
+              <label for="last_seen_time" class="poppins-regular">Time</label>
+              <input
+                type="time"
+                id="last_seen_time"
+                name="last_seen_time"
+                class="poppins-regular"
+                readonly
+              />
+            </div>
+          </div>
+          <div class="detail">
+            <label for="clothing" class="poppins-regular">Clothing</label>
+            <input
+              type="text"
+              id="clothing"
+              name="clothing"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+        </div>
+
+        <div class="modalSection">
+          <h3 class="poppins-medium">Description</h3>
+          <div class="detail">
+            <label for="description" class="poppins-regular">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              rows="6"
+              readonly
+              class="poppins-regular"
+            ></textarea>
+          </div>
+          <div class="detail">
+            <label for="reported_at" class="poppins-regular">Reported At</label>
+            <input
+              type="text"
+              id="reported_at"
+              name="reported_at"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+        </div>
+
+        <div class="modalSection">
+          <h3 class="poppins-medium">Action</h3>
+          <form action="#" method="post" class="two-column">
+            <div class="detail">
+              <label for="description" class="poppins-regular">Options</label>
+              <select name="project" id="project" required>
+                <option value="" disabled selected class="poppins-regular">
+                  Select an option
+                </option>
+                <option value="#" class="poppins-regular">
+                  Sample Option 1
+                </option>
+                <option value="#" class="poppins-regular">
+                  Sample Option 2
+                </option>
+                <option value="#" class="poppins-regular">
+                  Sample Option 3
+                </option>
+              </select>
+            </div>
+            <div class="detail">
+              <button type="submit" class="poppins-regular">Update</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

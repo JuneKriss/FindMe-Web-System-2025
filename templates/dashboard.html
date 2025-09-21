@@ -19,7 +19,7 @@
   </head>
   <body>
     <div class="container">
-      {% include 'sidebar.html' %}
+      {% include 'components/sidebar.html' %}
       <div class="main">
         <div class="title">
           <h2 class="poppins-medium">Dashboard</h2>
@@ -114,7 +114,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for i in "12345"|make_list %}
+                <!-- {% for i in "12345"|make_list %}
                 <tr>
                   <td class="poppins-regular">001</td>
                   <td class="poppins-regular">Ferryl Johnson</td>
@@ -127,7 +127,12 @@
                     </div>
                   </td>
                 </tr>
-                {% endfor %}
+                {% endfor %} -->
+                <tr>
+                  <td class="poppins-regular table-empty" colspan="5">
+                    <span>There are currently no cases available.</span>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
