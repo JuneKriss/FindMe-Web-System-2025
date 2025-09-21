@@ -10,21 +10,21 @@
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="{% static 'css/reports.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/cases.css' %}" />
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <title>Reports</title>
+    <title>Cases</title>
   </head>
   <body>
     <div class="container">
       {% include 'components/sidebar.html' %}
       <div class="main">
         <div class="title">
-          <h2 class="poppins-medium">Reports</h2>
+          <h2 class="poppins-medium">Cases</h2>
         </div>
-        <section class="report-table">
+        <section class="cases-table">
           <div class="head">
             <div class="left">
               <div class="search-bar">
@@ -36,11 +36,6 @@
                   class="poppins-regular"
                 />
               </div>
-              <button>
-                <i data-lucide="file-plus-2"></i>
-                <span class="poppins-regular">Add Report</span>
-              </button>
-              {% include 'components/add_report_modal.html' %}
             </div>
             <div class="right">
               <!-- Filter Button -->
@@ -80,8 +75,9 @@
                 <tr>
                   <th class="poppins-medium">ID</th>
                   <th class="poppins-medium">Missing Person</th>
-                  <th class="poppins-medium">Reporter</th>
-                  <th class="poppins-medium">Date Reported</th>
+                  <th class="poppins-medium">Occurence</th>
+                  <th class="poppins-medium">Family</th>
+                  <th class="poppins-medium">Last Update</th>
                   <th class="poppins-medium">Status</th>
                   <th class="poppins-medium">Actions</th>
                 </tr>
@@ -91,12 +87,15 @@
                 <tr>
                   <td class="poppins-regular">001</td>
                   <td class="poppins-regular">Ferryl Johnson</td>
-                  <td class="poppins-regular ongoing">John Doe</td>
-                  <td class="poppins-regular">February 30, 2024</td>
+                  <td class="poppins-regular ongoing">
+                    Feb 30, 2024, 10:50 a.m.
+                  </td>
+                  <td class="poppins-regular">Mama Johnson</td>
+                  <td class="poppins-regular">Feb 30, 2024</td>
                   <td class="poppins-regular pending">Pending</td>
                   <td>
                     <div class="actionIcon">
-                      <i data-lucide="file-search"></i>
+                      <i data-lucide="pen"></i>
                       <i data-lucide="message-circle"></i>
                     </div>
                   </td>
@@ -125,11 +124,12 @@
             </div>
           </div>
         </section>
-        {% include 'components/report_details_modal.html' %}
       </div>
     </div>
 
     <script>
+      lucide.createIcons();
+
       document.querySelectorAll(".dropdown .button").forEach((button) => {
         button.addEventListener("click", (e) => {
           const dropdown = e.target.closest(".dropdown");
@@ -150,74 +150,6 @@
             .forEach((d) => d.classList.remove("active"));
         }
       });
-
-      //MODALFUNCTIONS
-      const setupModal = (triggerSelector, modalId) => {
-        const triggers = document.querySelectorAll(triggerSelector);
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        const closeBtn = modal.querySelector(".close");
-
-        // Open modal
-        triggers.forEach((trigger) => {
-          trigger.addEventListener("click", () => {
-            modal.classList.add("show");
-          });
-        });
-
-        // Close modal by button
-        if (closeBtn) {
-          closeBtn.addEventListener("click", () => {
-            modal.classList.remove("show");
-          });
-        }
-
-        // Close modal by clicking outside content
-        modal.addEventListener("click", (e) => {
-          if (e.target === modal) {
-            modal.classList.remove("show");
-          }
-        });
-      };
-
-      // Setup both modals
-      setupModal('[data-lucide="file-search"]', "infoModal"); // Report details modal
-      setupModal(".head .left button", "addReportModal");
-
-      //IMAGES HANDLER
-      const fileInput = document.getElementById("images");
-      const uploadContent = document.getElementById("uploadContent");
-
-      fileInput.addEventListener("change", (event) => {
-        const files = event.target.files;
-        if (files.length > 0) {
-          let previewHTML = '<div class="preview-container">';
-          for (const file of files) {
-            if (file.type.startsWith("image/")) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                previewHTML += `<img src="${e.target.result}" alt="Preview">`;
-                uploadContent.innerHTML = previewHTML + "</div>";
-              };
-              reader.readAsDataURL(file);
-            }
-          }
-        } else {
-          // reset if no file selected
-          uploadContent.innerHTML = `
-      <i data-lucide="images"></i>
-      <p class="poppins-regular">
-          Click to
-          <span class="browse poppins-medium">Browse</span> and upload
-            images
-      </p>
-      <small class="poppins-regular">PNG, JPG</small>
-          `;
-        }
-      });
-
-      lucide.createIcons();
     </script>
 
     {% if debug %}

@@ -296,8 +296,83 @@ def reports(request):
         messages.error(request, "User not found.")
         return redirect("login")
 
-    return render(request, "dashboard.html", {"username": user.username})
+    return render(request, "reports.html", {"username": user.username})
 
+def submit_report(request):
+    """Handle the report form submission."""
+    user_id = request.session.get("user_id")
+
+    if not user_id:
+        return redirect("login")
+
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("login")
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        full_name = f"{first_name} {last_name}".strip()
+        age = request.POST.get("age")
+        gender = request.POST.get("gender")
+        last_seen_date = request.POST.get("last_seen_date")
+        last_seen_time = request.POST.get("last_seen_time")
+        clothing = request.POST.get("clothing")
+        location = request.POST.get("location")
+        notes = request.POST.get("notes")
+
+        if not gender:
+            messages.error(request, "Please select a gender.")
+
+        if not full_name or not age or not gender or not last_seen_date:
+            messages.error(request, "Please fill in all required fields.")
+        else:
+            ReportCase.objects.create(
+                reporter=user,
+                full_name=full_name,
+                age=age,
+                gender=gender,
+                last_seen_date=last_seen_date,
+                last_seen_time=last_seen_time if last_seen_time else None,
+                last_seen_location=location,
+                clothing=clothing,
+                notes=notes,
+                created_at=timezone.now(),
+            )
+            messages.success(request, "Report submitted successfully.")
+            return redirect("reports")
+
+    return redirect("reports")
+
+def cases(request):
+    user_id = request.session.get('user_id')
+
+    if not user_id:
+        return redirect("login")  # Force login if no session
+    
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("login")
+
+    return render(request, "cases.html", {"username": user.username})
+
+def notifications(request):
+    user_id = request.session.get('user_id')
+
+    if not user_id:
+        return redirect("login")  # Force login if no session
+    
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("login")
+
+    return render(request, "notifications.html", {"username": user.username})
 
 
 

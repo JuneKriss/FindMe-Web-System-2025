@@ -3,7 +3,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
-
 class Account(AbstractUser):
     account_id = models.AutoField(primary_key=True)  # primary key
     role = models.CharField(max_length=20, choices=[
@@ -24,23 +23,7 @@ class EmailVerificationCode(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_expired(self):
-        return timezone.now() > self.created_at + timedelta(minutes=5) 
-    
-class Family(models.Model):
-    family_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)  # example field
-    address = models.CharField(max_length=255)
-    contactNo =models.CharField(max_length=255)
-    # account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="accounts")
-
-    def __str__(self):
-        return self.name
-
-    # Optional: keep this if you want `user.id` to return account_id
-    @property
-    def id(self):
-        return self.account_id
-
+        return timezone.now() > self.created_at + timedelta(minutes=5)     
 class Family(models.Model):
     family_id = models.AutoField(primary_key=True)
     account = models.OneToOneField(
@@ -73,6 +56,7 @@ class ReportCase(models.Model):
     age = models.PositiveBigIntegerField()
     gender = models.CharField(max_length=255)
     last_seen_date = models.DateField()
+    last_seen_time = models.TimeField(null=True)
     last_seen_location = models.CharField(max_length=255)
     clothing = models.CharField(max_length=255)
     notes = models.CharField(max_length=255)

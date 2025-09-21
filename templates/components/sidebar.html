@@ -37,16 +37,19 @@
                 <span class="poppins-regular">Reports</span>
               </a>
             </li>
-            <li>
-              <a href="#">
+            <li class="{% if request.path == '/cases/' %}active{% endif %}">
+              <a href="{% url 'cases' %}">
                 <i data-lucide="briefcase"></i>
                 <span class="poppins-regular">Cases</span>
               </a>
             </li>
-            <li>
-              <a href="#">
+            <li
+              class="{% if request.path == '/notifications/' %}active{% endif %}"
+            >
+              <a href="{% url 'notifications' %}" class="nav-notif">
                 <i data-lucide="bell"></i>
-                <span class="poppins-regular">Notification</span>
+                <span class="poppins-regular">Notifications</span>
+                <span class="notif-badge poppins-regular">4</span>
               </a>
             </li>
           </ul>

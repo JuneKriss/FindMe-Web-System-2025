@@ -350,3 +350,9 @@ section {
 .ongoing {
   color: var(--ongoing);
 }
+
+.table-empty span {
+  font-size: 1.125em;
+  font-style: italic;
+  color: var(--subtext);
+}

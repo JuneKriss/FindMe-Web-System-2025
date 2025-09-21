@@ -1,0 +1,141 @@
+{% load static %}
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/notification.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <title>Notifications</title>
+  </head>
+  <body>
+    <div class="container">
+      {% include 'components/sidebar.html' %}
+      <div class="main">
+        <div class="title">
+          <h2 class="poppins-medium">Notifications</h2>
+        </div>
+        <div class="bottomContainer">
+          <p class="poppins-regular">
+            You have <span class="notif_count">4</span> notifications to go
+            through
+          </p>
+          <div class="dropdown">
+            <button class="button" id="filterBtn">
+              <i data-lucide="list-filter"></i>
+              <span class="poppins-regular">Filter</span>
+            </button>
+            <div class="dropdown-menu">
+              <ul class="poppins-regular">
+                <li>Pending</li>
+                <li>Filter 2</li>
+                <li>Filter 3</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <section>
+          <div class="notification-group">
+            <h2 class="poppins-medium">Today</h2>
+            <div class="notification-container">
+              {% for i in "12"|make_list %}
+              <div class="notification">
+                <div class="left">
+                  <div class="icon"><i data-lucide="message-circle"></i></div>
+                  <div class="texts">
+                    <div class="top">
+                      <h3 class="poppins-medium">New Message</h3>
+                      <span class="poppins-regular">4 hours ago</span>
+                    </div>
+                    <div class="bottom">
+                      <p class="poppins-regular">John Doe sent you a message</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="right">
+                  <i data-lucide="trash"></i>
+                </div>
+              </div>
+              <div class="notification">
+                <div class="left">
+                  <div class="icon"><i data-lucide="file"></i></div>
+                  <div class="texts">
+                    <div class="top">
+                      <h3 class="poppins-medium">New Report</h3>
+                      <span class="poppins-regular">30 minutes ago</span>
+                    </div>
+                    <div class="bottom">
+                      <p class="poppins-regular">New Report has been posted</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="right">
+                  <i data-lucide="trash"></i>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="notification-group">
+            <h2 class="poppins-medium">Yesterday</h2>
+            <div class="notification-container">
+              {% for i in "12"|make_list %}
+              <div class="notification">
+                <div class="left">
+                  <div class="icon"><i data-lucide="message-circle"></i></div>
+                  <div class="texts">
+                    <div class="top">
+                      <h3 class="poppins-medium">New Message</h3>
+                      <span class="poppins-regular">Yesterday</span>
+                    </div>
+                    <div class="bottom">
+                      <p class="poppins-regular">John Doe sent you a message</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="right">
+                  <i data-lucide="trash"></i>
+                </div>
+              </div>
+              <div class="notification">
+                <div class="left">
+                  <div class="icon"><i data-lucide="file"></i></div>
+                  <div class="texts">
+                    <div class="top">
+                      <h3 class="poppins-medium">New Report</h3>
+                      <span class="poppins-regular">4 Jun</span>
+                    </div>
+                    <div class="bottom">
+                      <p class="poppins-regular">New Report has been posted</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="right">
+                  <i data-lucide="trash"></i>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      lucide.createIcons();
+    </script>
+
+    {% if debug %}
+    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+    {% endif %}
+  </body>
+</html>
