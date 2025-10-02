@@ -19,39 +19,136 @@ from rest_framework import status
 from .serializers import AccountSerializer , FamilySerializer, VolunteerSerializer
 from .serializers import ReportSerializer, ReportMediaSerializer
 
-#MODELS
+#MODELS 
 from .models import Account, Family, Volunteer
 from .models import ReportCase, ReportMedia
 
 # API
+
+import random
+from datetime import timedelta
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
+
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .models import Account, EmailVerificationCode
+from .serializers import AccountSerializer
+
+
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
-    permission_classes = [IsAuthenticated]
-    lookup_field = 'account_id' 
+    lookup_field = "account_id"
 
+    # --- Permissions ---
     def get_permissions(self):
-        # Anyone can register
-        if self.action == 'create':
+        from rest_framework.permissions import AllowAny, IsAuthenticated
+        if self.action in ["create", "verify_email", "resend_code"]:
             return [AllowAny()]
-        return super().get_permissions()
+        return [IsAuthenticated()]
 
-    @action(detail=False, methods=['patch'], url_path='update-role')
+    # --- Register (override create) ---
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Generate OTP
+        otp_code = str(random.randint(100000, 999999))
+        EmailVerificationCode.objects.create(user=user, code=otp_code)
+
+        # Send email
+        send_mail(
+            "Verify your FindMe account",
+            f"Your verification code is {otp_code}. It expires in 5 minutes.",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+
+        return Response(
+            {
+                "message": "Account created. Verification code sent.",
+                "account_id": user.account_id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    # --- Verify OTP ---
+    @action(detail=False, methods=["post"], url_path="verify-email")
+    def verify_email(self, request):
+        user_id = request.data.get("user_id")
+        code = request.data.get("code")
+
+        try:
+            user = Account.objects.get(account_id=user_id)
+        except Account.DoesNotExist:
+            return Response({"error": "Invalid user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            otp_entry = EmailVerificationCode.objects.filter(user=user, code=code).latest("created_at")
+            if otp_entry.is_expired():
+                return Response({"error": "Code expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.is_active = True
+            user.save()
+            return Response({"success": "Account verified!"}, status=status.HTTP_200_OK)
+
+        except EmailVerificationCode.DoesNotExist:
+            return Response({"error": "Invalid code"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # --- Resend OTP ---
+    @action(detail=False, methods=["post"], url_path="resend-code")
+    def resend_code(self, request):
+        user_id = request.data.get("user_id")
+
+        try:
+            user = Account.objects.get(account_id=user_id)
+        except Account.DoesNotExist:
+            return Response({"error": "Invalid user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        recent_code = EmailVerificationCode.objects.filter(user=user).order_by("-created_at").first()
+        if recent_code and recent_code.created_at > timezone.now() - timedelta(minutes=1):
+            return Response({"error": "Please wait before requesting a new code"}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp_code = str(random.randint(100000, 999999))
+        EmailVerificationCode.objects.create(user=user, code=otp_code)
+
+        send_mail(
+            "Verify your FindMe account",
+            f"Your new verification code is {otp_code}. It expires in 5 minutes.",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+
+        return Response({"success": "New code sent to your email."}, status=status.HTTP_200_OK)
+
+    # --- Update Role ---
+    @action(detail=False, methods=["patch"], url_path="update-role")
     def update_role(self, request):
-        role = request.data.get('role')
-        if role not in ['family', 'volunteer']:
-            return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
-
         user = request.user
-        user.role = role
-        user.save(update_fields=['role'])
+        role = request.data.get("role")
 
-        return Response({'role': user.role}, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=['get'], url_path='me')
+        if role not in ["family", "volunteer"]:
+            return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.role = role
+        user.save()
+
+        return Response({"success": "Role updated", "role": user.role}, status=status.HTTP_200_OK)
+
+    # --- Get Current User ---
+    @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
         serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     
 class FamilyViewSet(viewsets.ModelViewSet):
     serializer_class = FamilySerializer

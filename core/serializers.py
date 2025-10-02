@@ -17,8 +17,6 @@ class VolunteerSerializer(serializers.ModelSerializer):
         read_only_fields = ["volunteer_id", "account"]
 
 class AccountSerializer(serializers.ModelSerializer):
-    family_profile = FamilySerializer(read_only=True)
-
     class Meta:
         model = Account
         fields = [
@@ -29,18 +27,20 @@ class AccountSerializer(serializers.ModelSerializer):
             "password",
             "role",
             "created_at",
-            "family_profile",
         ]
         extra_kwargs = {
             "password": {"write_only": True},
+            "role": {"read_only": True},
         }
 
     def create(self, validated_data):
-        password = validated_data.pop("password")
-        account = Account(**validated_data)
-        account.password = make_password(password)
-        account.save()
-        return account
+        password = validated_data.pop("password", None)
+        user = super().create(validated_data)
+        if password:
+            user.set_password(password)
+        user.is_active = False 
+        user.save()
+        return user
 
 
 class ReportMediaSerializer(serializers.ModelSerializer):

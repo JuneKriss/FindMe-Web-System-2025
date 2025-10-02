@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+
 class Account(AbstractUser):
     account_id = models.AutoField(primary_key=True)  # primary key
     role = models.CharField(max_length=20, choices=[
@@ -24,6 +25,7 @@ class EmailVerificationCode(models.Model):
 
     def is_expired(self):
         return timezone.now() > self.created_at + timedelta(minutes=5)     
+    
 class Family(models.Model):
     family_id = models.AutoField(primary_key=True)
     account = models.OneToOneField(
@@ -56,7 +58,7 @@ class ReportCase(models.Model):
     age = models.PositiveBigIntegerField()
     gender = models.CharField(max_length=255)
     last_seen_date = models.DateField()
-    last_seen_time = models.TimeField(null=True)
+    last_seen_time = models.TimeField(null=True)        
     last_seen_location = models.CharField(max_length=255)
     clothing = models.CharField(max_length=255)
     notes = models.CharField(max_length=255)
@@ -69,7 +71,6 @@ class ReportCase(models.Model):
 
     def __str__(self):
         return f"{self.full_name} - {self.status}"
-
 
 class ReportMedia(models.Model):
     media_id = models.AutoField(primary_key=True)
