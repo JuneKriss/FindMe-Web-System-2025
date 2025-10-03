@@ -4,8 +4,8 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <div class="modalHead">
-      <h3 class="poppins-medium">Report ID #</h3>
-      <span class="poppins-regular status-badge pending">
+      <h3 class="poppins-medium" id="report_id">Report #</h3>
+      <span class="poppins-regular status-badge">
         <span class="status-dot"></span>
         Pending
       </span>
@@ -141,30 +141,35 @@
 
         <div class="modalSection">
           <h3 class="poppins-medium">Action</h3>
-          <form action="#" method="post" class="two-column">
+          <form
+            action="{% url 'update_report_status' %}"
+            method="post"
+            class="two-column"
+          >
+            {% csrf_token %}
+            <input type="hidden" name="report_id" id="reportIdField" />
+
             <div class="detail">
-              <label for="description" class="poppins-regular">Options</label>
-              <select name="project" id="project" required>
-                <option value="" disabled selected class="poppins-regular">
-                  Select an option
-                </option>
-                <option value="#" class="poppins-regular">
-                  Sample Option 1
-                </option>
-                <option value="#" class="poppins-regular">
-                  Sample Option 2
-                </option>
-                <option value="#" class="poppins-regular">
-                  Sample Option 3
-                </option>
+              <label for="statusSelect" class="poppins-regular">Options</label>
+              <select name="status" id="statusSelect" required>
+                <option value="" disabled>Select status</option>
+                {% for key, value in status_choices %}
+                <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
               </select>
             </div>
+
             <div class="detail">
               <button type="submit" class="poppins-regular">Update</button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
+</div>
+
+<div id="imgModal" class="image-modal">
+  <span class="close">&times;</span>
+  <img id="modalImg" class="image-modal-content" />
 </div>

@@ -2,12 +2,17 @@ import random
 from django.shortcuts import render,redirect
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
-from .models import Account, EmailVerificationCode
 from django.core.mail import send_mail
+from django.core.paginator import Paginator
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.http import JsonResponse
+import datetime
 from datetime import timedelta
+from django.http import JsonResponse
+from django.db.models import Q
+
 
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -20,8 +25,7 @@ from .serializers import AccountSerializer , FamilySerializer, VolunteerSerializ
 from .serializers import ReportSerializer, ReportMediaSerializer
 
 #MODELS
-from .models import Account, Family, Volunteer
-from .models import ReportCase, ReportMedia
+from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode
 
 # API
 class AccountViewSet(viewsets.ModelViewSet):
@@ -288,18 +292,34 @@ def reports(request):
     user_id = request.session.get('user_id')
 
     if not user_id:
-        return redirect("login")  # Force login if no session
-    
+        return redirect("login")
+
     try:
         user = Account.objects.get(account_id=user_id)
     except Account.DoesNotExist:
         messages.error(request, "User not found.")
         return redirect("login")
 
-    return render(request, "reports.html", {"username": user.username})
+    # Get all reports (latest first)
+    all_reports = ReportCase.objects.select_related("reporter").order_by("-created_at")
+
+    # Pagination (10 per page)
+    paginator = Paginator(all_reports, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "reports.html",
+        {
+            "username": user.username,
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "status_choices": ReportCase.STATUS_CHOICES, 
+        }
+    )
 
 def submit_report(request):
-    """Handle the report form submission."""
     user_id = request.session.get("user_id")
 
     if not user_id:
@@ -319,30 +339,152 @@ def submit_report(request):
         gender = request.POST.get("gender")
         last_seen_date = request.POST.get("last_seen_date")
         last_seen_time = request.POST.get("last_seen_time")
-        clothing = request.POST.get("clothing")
-        location = request.POST.get("location")
-        notes = request.POST.get("notes")
+        clothing = request.POST.get("clothing", "").strip()
+        location = request.POST.get("location", "").strip()
+        notes = request.POST.get("notes", "").strip()
+        images = request.FILES.getlist("images")
 
-        if not gender:
-            messages.error(request, "Please select a gender.")
-
+        # --- backend validation ---
         if not full_name or not age or not gender or not last_seen_date:
             messages.error(request, "Please fill in all required fields.")
-        else:
-            ReportCase.objects.create(
-                reporter=user,
-                full_name=full_name,
-                age=age,
-                gender=gender,
-                last_seen_date=last_seen_date,
-                last_seen_time=last_seen_time if last_seen_time else None,
-                last_seen_location=location,
-                clothing=clothing,
-                notes=notes,
-                created_at=timezone.now(),
-            )
-            messages.success(request, "Report submitted successfully.")
             return redirect("reports")
+
+        # validate age
+        try:
+            age = int(age)
+            if age <= 0:
+                messages.error(request, "Age must be a positive number.")
+                return redirect("reports")
+        except ValueError:
+            messages.error(request, "Please enter a valid age.")
+            return redirect("reports")
+
+        # validate date
+        try:
+            last_seen_date_obj = datetime.datetime.strptime(last_seen_date, "%Y-%m-%d").date()
+            if last_seen_date_obj > datetime.date.today():
+                messages.error(request, "Please provide a valid last seen date.")
+                return redirect("reports")
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect("reports")
+
+        # validate images
+        allowed_types = ["image/jpeg", "image/png", "image/jpg"]
+        max_size_mb = 5
+        for img in images:
+            if img.content_type not in allowed_types:
+                messages.error(request, f"Invalid file type: {img.name}. Only JPG and PNG allowed.")
+                return redirect("reports")
+            if img.size > max_size_mb * 1024 * 1024:
+                messages.error(request, f"{img.name} is too large (max {max_size_mb}MB).")
+                return redirect("reports")
+
+        # create report
+        report = ReportCase.objects.create(
+            reporter=user,
+            full_name=full_name,
+            age=age,
+            gender=gender,
+            last_seen_date=last_seen_date,
+            last_seen_time=last_seen_time if last_seen_time else None,
+            last_seen_location=location,
+            clothing=clothing,
+            notes=notes,
+        )
+
+        # save images
+        for img in images:
+            ReportMedia.objects.create(
+                report=report,
+                file=img,
+                file_type=img.content_type,
+            )
+
+        messages.success(request, "Report submitted successfully.")
+        return redirect("reports")
+
+    return redirect("reports")
+
+def search_reports(request):
+    query = request.GET.get("q", "").strip()
+    sort = request.GET.get("sort", "created_at")
+    filter_option = request.GET.get("filter", "").lower()
+
+    reports = ReportCase.objects.all()
+
+    if query:
+        reports = reports.filter(
+            Q(full_name__icontains=query) |
+            Q(reporter__username__icontains=query) |
+            Q(age__icontains=query) |
+            Q(gender__icontains=query) |
+            Q(last_seen_date__icontains=query) |
+            Q(last_seen_time__icontains=query) |
+            Q(last_seen_location__icontains=query) |
+            Q(clothing__icontains=query) |
+            Q(notes__icontains=query) |
+            Q(status__icontains=query)
+        )
+
+    # sorting logic
+    if sort == "id":
+        reports = reports.order_by("report_id")
+    elif sort == "date":
+        reports = reports.order_by("-created_at")
+    elif sort == "status":
+        reports = reports.order_by("status")
+    else:
+        reports = reports.order_by("-created_at")
+
+    #filter logic
+    if filter_option and filter_option != "reset":
+        reports = reports.filter(status__iexact=filter_option)
+
+    # serialize results
+    results = []
+    for r in reports:
+        results.append({
+            "id": r.report_id,
+            "full_name": r.full_name,
+            "reporter": r.reporter.username,
+            "status": r.status,
+            "created_at": r.created_at.strftime("%B %d, %Y %I:%M %p"),
+        })
+
+    return JsonResponse({"results": results})
+
+def update_report_status(request):
+    if request.method == "POST":
+        report_id = request.POST.get("report_id")
+        status = request.POST.get("status")
+
+        if not report_id:
+            messages.error(request, "Report ID is missing.")
+            return redirect("reports")
+
+        try:
+            report = ReportCase.objects.get(report_id=report_id)
+        except ReportCase.DoesNotExist:
+            messages.error(request, "Report not found.")
+            return redirect("reports")
+
+        # --- backend validation ---
+        if not status:
+            messages.error(request, "Please select a status.")
+            return redirect("reports")
+
+        valid_statuses = [choice[0] for choice in ReportCase.STATUS_CHOICES]
+        if status not in valid_statuses:
+            messages.error(request, "Invalid status.")
+            return redirect("reports")
+
+        # update
+        report.status = status
+        report.save()
+
+        messages.success(request, f"Report status updated successfully.")
+        return redirect("reports")
 
     return redirect("reports")
 

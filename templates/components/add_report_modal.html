@@ -1,6 +1,6 @@
 {% load static %}
 
-<div id="addReportModal" class="side-modal show">
+<div id="addReportModal" class="side-modal">
   <div class="side-modal-content">
     <span class="close">&times;</span>
     <div class="side-modal-head">
@@ -19,7 +19,11 @@
       </div>
     </div>
 
-    <form method="post" action="{% url 'submit_report' %}">
+    <form
+      method="post"
+      action="{% url 'submit_report' %}"
+      enctype="multipart/form-data"
+    >
       {% csrf_token %}
       <div class="side-modalSection">
         <h3 class="poppins-medium">Missing Person Information</h3>
@@ -31,6 +35,7 @@
               id="first_name"
               name="first_name"
               class="poppins-regular"
+              required
             />
           </div>
           <div class="detail">
@@ -40,13 +45,20 @@
               id="last_name"
               name="last_name"
               class="poppins-regular"
+              required
             />
           </div>
         </div>
         <div class="two-column">
           <div class="detail">
             <label for="age" class="poppins-regular">Age</label>
-            <input type="number" id="age" name="age" class="poppins-regular" />
+            <input
+              type="number"
+              id="age"
+              name="age"
+              class="poppins-regular"
+              required
+            />
           </div>
           <div class="detail">
             <label for="gender" class="poppins-regular">Gender</label>
@@ -71,6 +83,7 @@
               id="last_seen_date"
               name="last_seen_date"
               class="poppins-regular"
+              required
             />
           </div>
           <div class="detail">
@@ -80,6 +93,7 @@
               id="last_seen_time"
               name="last_seen_time"
               class="poppins-regular"
+              required
             />
           </div>
         </div>
@@ -90,6 +104,7 @@
             id="clothing"
             name="clothing"
             class="poppins-regular"
+            required
           />
         </div>
         <div class="detail">
@@ -99,6 +114,7 @@
             name="location"
             rows="3"
             class="poppins-regular"
+            required
           ></textarea>
         </div>
       </div>
@@ -111,6 +127,7 @@
             name="notes"
             rows="6"
             class="poppins-regular"
+            required
           ></textarea>
         </div>
       </div>

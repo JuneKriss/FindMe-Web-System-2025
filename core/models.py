@@ -60,11 +60,18 @@ class ReportCase(models.Model):
     last_seen_location = models.CharField(max_length=255)
     clothing = models.CharField(max_length=255)
     notes = models.CharField(max_length=255)
-    status = models.CharField(
-        max_length=20,
-        choices=[("Missing", "Missing"), ("Ongoing", "Ongoing"), ("Resolved", "Resolved")],
-        default="Missing",
-    )
+
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("Verified", "Verified"),
+        ("In Progress", "In Progress"),
+        ("On Hold", "On Hold"),
+        ("Closed - Safe", "Closed - Safe"),
+        ("Closed - Deceased", "Closed - Deceased"),
+        ("Closed - Unresolved", "Closed - Unresolved"),
+        ("Rejected", "Rejected"),
+    ]
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

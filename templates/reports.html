@@ -1,4 +1,4 @@
-{% load static %}
+{% load static %} {% load tz %}
 
 <html lang="en">
   <head>
@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <title>Reports</title>
   </head>
@@ -52,8 +53,8 @@
                 <div class="dropdown-menu">
                   <ul class="poppins-regular">
                     <li>Pending</li>
-                    <li>Filter 2</li>
-                    <li>Filter 3</li>
+                    <li>Denied</li>
+                    <li style="color: #ef4444">Reset</li>
                   </ul>
                 </div>
               </div>
@@ -66,9 +67,10 @@
                 </button>
                 <div class="dropdown-menu">
                   <ul class="poppins-regular">
+                    <li>ID</li>
                     <li>Date</li>
                     <li>Status</li>
-                    <li>Sort 3</li>
+                    <li style="color: #ef4444">Reset</li>
                   </ul>
                 </div>
               </div>
@@ -87,13 +89,36 @@
                 </tr>
               </thead>
               <tbody>
-                {% for i in "1234567"|make_list %}
-                <tr>
-                  <td class="poppins-regular">001</td>
-                  <td class="poppins-regular">Ferryl Johnson</td>
-                  <td class="poppins-regular ongoing">John Doe</td>
-                  <td class="poppins-regular">February 30, 2024</td>
-                  <td class="poppins-regular pending">Pending</td>
+                {% if page_obj %} {% for report in page_obj %}
+                <tr
+                  data-id="{{ report.report_id }}"
+                  data-name="{{ report.full_name }}"
+                  data-reporter="{{ report.reporter.username }}"
+                  data-created="{{ report.created_at|date:'F d, Y g:i A' }}"
+                  data-status="{{ report.status }}"
+                  data-age="{{ report.age }}"
+                  data-gender="{{ report.gender }}"
+                  data-last_seen_date="{{ report.last_seen_date }}"
+                  data-last_seen_time="{{ report.last_seen_time|time:'H:i' }}"
+                  data-clothing="{{ report.clothing }}"
+                  data-description="{{ report.notes }}"
+                  data-media='[
+                    {% for media in report.media.all %}
+                      {"url": "{{ media.file.url }}", "type": "{{ media.file_type }}"}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                  ]'
+                >
+                  <td class="poppins-regular">{{ report.report_id }}</td>
+                  <td class="poppins-regular">{{ report.full_name }}</td>
+                  <td class="poppins-regular">
+                    {{ report.reporter.username }}
+                  </td>
+                  <td class="poppins-regular">
+                    {{ report.created_at|date:"F d, Y g:i A" }}
+                  </td>
+                  <td class="poppins-regular {{ report.status|lower|slugify }}">
+                    {{ report.status }}
+                  </td>
                   <td>
                     <div class="actionIcon">
                       <i data-lucide="file-search"></i>
@@ -101,26 +126,44 @@
                     </div>
                   </td>
                 </tr>
-                {% endfor %}
-                <!-- <tr>
+                {% endfor %} {% else %}
+                <tr>
                   <td class="poppins-regular table-empty" colspan="6">
-                    <span>
-                      There are currently no reports available.
-                    </span>
-                    </td>
+                    <span>There are currently no reports available.</span>
                   </td>
-                </tr> -->
+                </tr>
+                {% endif %}
               </tbody>
             </table>
             <div class="pagination">
               <div class="left">
-                <span class="poppins-regular"
-                  >Showing 1 to 10 of 20 entries</span
-                >
+                {% if page_obj.paginator.count > 0 %}
+                <span class="poppins-regular">
+                  Showing {{ page_obj.start_index }} to {{ page_obj.end_index }}
+                  of {{ page_obj.paginator.count }} entries
+                </span>
+                {% else %}
+                <span class="poppins-regular">No entries to display</span>
+                {% endif %}
               </div>
               <div class="right">
-                <button id="prevBtn" class="poppins-regular">Prev</button>
-                <button id="nextBtn" class="poppins-regular">Next</button>
+                {% if page_obj.has_previous %}
+                <a
+                  href="?page={{ page_obj.previous_page_number }}"
+                  class="poppins-regular"
+                  >Prev</a
+                >
+                {% else %}
+                <span class="poppins-regular disabled">Prev</span>
+                {% endif %} {% if page_obj.has_next %}
+                <a
+                  href="?page={{ page_obj.next_page_number }}"
+                  class="poppins-regular"
+                  >Next</a
+                >
+                {% else %}
+                <span class="poppins-regular disabled">Next</span>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -129,98 +172,28 @@
       </div>
     </div>
 
+    <script src="{% static 'js/reports/reports.js' %}"></script>
+    <script src="{% static 'js/reports/modal.js' %}"></script>
+    <script src="{% static 'js/reports/image_upload.js' %}"></script>
+
+    {% if messages %}
     <script>
-      document.querySelectorAll(".dropdown .button").forEach((button) => {
-        button.addEventListener("click", (e) => {
-          const dropdown = e.target.closest(".dropdown");
-          dropdown.classList.toggle("active");
-
-          // Close other dropdowns
-          document.querySelectorAll(".dropdown").forEach((d) => {
-            if (d !== dropdown) d.classList.remove("active");
-          });
+      {% for message in messages %}
+        Swal.fire({
+          position: "top-end",
+          icon: "{% if 'success' in message.tags %}success{% elif 'error' in message.tags %}error{% else %}info{% endif %}",
+          title: "{{ message|escapejs }}",
+          showConfirmButton: false,
+          timer: 2000,
+          customClass: {
+            popup: "my-swal-popup",
+            title: "poppins-medium my-swal-title",
+            icon: "my-swal-icon",
+          },
         });
-      });
-
-      // Close dropdown if clicked outside
-      document.addEventListener("click", (e) => {
-        if (!e.target.closest(".dropdown")) {
-          document
-            .querySelectorAll(".dropdown")
-            .forEach((d) => d.classList.remove("active"));
-        }
-      });
-
-      //MODALFUNCTIONS
-      const setupModal = (triggerSelector, modalId) => {
-        const triggers = document.querySelectorAll(triggerSelector);
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        const closeBtn = modal.querySelector(".close");
-
-        // Open modal
-        triggers.forEach((trigger) => {
-          trigger.addEventListener("click", () => {
-            modal.classList.add("show");
-          });
-        });
-
-        // Close modal by button
-        if (closeBtn) {
-          closeBtn.addEventListener("click", () => {
-            modal.classList.remove("show");
-          });
-        }
-
-        // Close modal by clicking outside content
-        modal.addEventListener("click", (e) => {
-          if (e.target === modal) {
-            modal.classList.remove("show");
-          }
-        });
-      };
-
-      // Setup both modals
-      setupModal('[data-lucide="file-search"]', "infoModal"); // Report details modal
-      setupModal(".head .left button", "addReportModal");
-
-      //IMAGES HANDLER
-      const fileInput = document.getElementById("images");
-      const uploadContent = document.getElementById("uploadContent");
-
-      fileInput.addEventListener("change", (event) => {
-        const files = event.target.files;
-        if (files.length > 0) {
-          let previewHTML = '<div class="preview-container">';
-          for (const file of files) {
-            if (file.type.startsWith("image/")) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                previewHTML += `<img src="${e.target.result}" alt="Preview">`;
-                uploadContent.innerHTML = previewHTML + "</div>";
-              };
-              reader.readAsDataURL(file);
-            }
-          }
-        } else {
-          // reset if no file selected
-          uploadContent.innerHTML = `
-      <i data-lucide="images"></i>
-      <p class="poppins-regular">
-          Click to
-          <span class="browse poppins-medium">Browse</span> and upload
-            images
-      </p>
-      <small class="poppins-regular">PNG, JPG</small>
-          `;
-        }
-      });
-
-      lucide.createIcons();
+      {% endfor %}
     </script>
-
-    {% if debug %}
+    {% endif %} {% if debug %}
     <script src="{% static 'django_browser_reload/reload.js' %}"></script>
     {% endif %}
   </body>
