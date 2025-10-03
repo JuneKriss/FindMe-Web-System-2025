@@ -3,8 +3,16 @@
   --secondary: #fca311;
   --subtext: #6b7280;
   --ongoing: #3399ff;
+
+  /* Status Colors */
   --pending: #ffb84d;
-  --denied: #ef4444;
+  --verified: #10b981;
+  --in-progress: #3399ff;
+  --on-hold: #a855f7;
+  --closed-safe: #22c55e;
+  --closed-deceased: #6b7280;
+  --closed-unresolved: #f97316;
+  --rejected: #ef4444;
 }
 
 * {
@@ -198,6 +206,11 @@ section {
   display: block;
 }
 
+.dropdown .dropdown-menu li.active {
+  background-color: var(--secondary);
+  color: #fff;
+}
+
 #cases-table {
   border-collapse: collapse;
   width: 100%;
@@ -257,20 +270,25 @@ section {
   padding: 1rem 0.5rem 0 0.5rem;
 }
 
-.pagination button {
+.pagination a {
   padding: 5px 15px;
   border: 1px solid #d2d2d2;
   background: #fff;
   color: var(--primary);
+  font-size: 0.875em;
   border-radius: 5px;
   cursor: pointer;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
     rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  text-decoration: none;
 }
 
-.pagination button:disabled {
+.pagination .disabled {
   background: #d2d2d2;
   cursor: not-allowed;
+  padding: 5px 15px;
+  display: inline-block;
+  font-size: 0.875em;
 }
 
 .pagination .left span {
@@ -282,8 +300,32 @@ section {
   color: var(--pending);
 }
 
-.denied {
-  color: var(--denied);
+.verified {
+  color: var(--verified);
+}
+
+.in-progress {
+  color: var(--in-progress);
+}
+
+.on-hold {
+  color: var(--on-hold);
+}
+
+.closed-safe {
+  color: var(--closed-safe);
+}
+
+.closed-deceased {
+  color: var(--closed-deceased);
+}
+
+.closed-unresolved {
+  color: var(--closed-unresolved);
+}
+
+.rejected {
+  color: var(--rejected);
 }
 
 .modal {
@@ -371,10 +413,32 @@ section {
   margin-right: 6px;
 }
 
-/* Variants */
+/* Variants (badge → dot) */
 .status-badge.pending .status-dot {
-  background-color: #ffb84d;
+  background-color: var(--pending);
 }
+.status-badge.verified .status-dot {
+  background-color: var(--verified);
+}
+.status-badge.in-progress .status-dot {
+  background-color: var(--in-progress);
+}
+.status-badge.on-hold .status-dot {
+  background-color: var(--on-hold);
+}
+.status-badge.closed-safe .status-dot {
+  background-color: var(--closed-safe);
+}
+.status-badge.closed-deceased .status-dot {
+  background-color: var(--closed-deceased);
+}
+.status-badge.closed-unresolved .status-dot {
+  background-color: var(--closed-unresolved);
+}
+.status-badge.rejected .status-dot {
+  background-color: var(--rejected);
+}
+
 /* Variants */
 
 .modalContainer {
@@ -436,6 +500,7 @@ section {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: pointer;
 }
 
 .mediaArrow {
@@ -482,6 +547,37 @@ section {
   background: var(--primary);
 }
 
+.image-modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8); /* dark overlay */
+  justify-content: center;
+  align-items: center;
+}
+
+.image-modal-content {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+}
+
+.image-modal .close {
+  position: absolute;
+  top: 20px;
+  right: 35px;
+  color: #fff;
+  font-size: 2em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
 .modalContainer .right {
   background-color: #fff;
   border-radius: 10px;
@@ -508,7 +604,7 @@ section {
 }
 
 .detail label {
-  font-size: 0.9rem;
+  font-size: 0.75em;
   color: #333;
 }
 
@@ -518,7 +614,7 @@ section {
   padding: 8px 10px;
   border: none;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.875em;
   width: 100%;
   background: #fff;
   resize: none;
@@ -834,4 +930,17 @@ section {
 .side-modal-content form .side-modalSection:nth-last-of-type(-n + 2) {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+.my-swal-popup {
+  border-radius: 5px;
+}
+
+.my-swal-title {
+  font-size: 1.5em;
+  color: var(--primary);
+}
+
+.my-swal-icon {
+  border: 5px solid #4caf50;
 }

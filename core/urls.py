@@ -8,7 +8,9 @@ urlpatterns = [
 
     path('reports/', views.reports, name='reports'),
     path("reports/submit/", views.submit_report, name="submit_report"),
-
+    path("reports/search/", views.search_reports, name="search_reports"),
+    path("reports/update-status/", views.update_report_status, name="update_report_status"),
+    
     path('cases/', views.cases, name='cases'),
     path('notifications/', views.notifications, name='notifications'),
 
