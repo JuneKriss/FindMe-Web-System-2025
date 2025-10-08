@@ -1,0 +1,207 @@
+{% load static %}
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/cases.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'css/components/details_modal.css' %}"
+    />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <title>Cases</title>
+  </head>
+  <body>
+    <div class="container">
+      {% include 'components/sidebar.html' %}
+      <div class="main">
+        <div class="title">
+          <h2 class="poppins-medium">Closed Cases</h2>
+        </div>
+        <section class="cases-table">
+          <div class="head">
+            <div class="left">
+              <div class="search-bar">
+                <i data-lucide="search"></i>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  id="search"
+                  class="poppins-regular"
+                />
+              </div>
+            </div>
+            <div class="right">
+              <!-- Filter Button -->
+              <div class="dropdown">
+                <button class="button" id="filterBtn">
+                  <i data-lucide="list-filter"></i>
+                  <span class="poppins-regular">Filter</span>
+                </button>
+                <div class="dropdown-menu">
+                  <ul class="poppins-regular">
+                    <li>Safe</li>
+                    <li>Deceased</li>
+                    <li>Unresolved</li>
+                    <li style="color: #ef4444">Reset</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Sort Button -->
+              <div class="dropdown">
+                <button class="button" id="sortBtn">
+                  <i data-lucide="chevrons-up-down"></i>
+                  <span class="poppins-regular">Sort</span>
+                </button>
+                <div class="dropdown-menu">
+                  <ul class="poppins-regular">
+                    <li>ID</li>
+                    <li>Date</li>
+                    <li>Status</li>
+                    <li style="color: #ef4444">Reset</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tableContainer">
+            <table id="cases-table">
+              <thead>
+                <tr>
+                  <th class="poppins-medium">ID</th>
+                  <th class="poppins-medium">Missing Person</th>
+                  <th class="poppins-medium">Reporter</th>
+                  <th class="poppins-medium">Date Reported</th>
+                  <th class="poppins-medium">Status</th>
+                  <th class="poppins-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if page_obj %} {% for report in page_obj %}
+                <tr
+                  data-id="{{ report.report_id }}"
+                  data-name="{{ report.full_name }}"
+                  data-reporter="{{ report.reporter.username }}"
+                  data-created="{{ report.created_at|date:'F d, Y g:i A' }}"
+                  data-status="{{ report.status }}"
+                  data-age="{{ report.age }}"
+                  data-gender="{{ report.gender }}"
+                  data-last_seen_date="{{ report.last_seen_date }}"
+                  data-last_seen_time="{{ report.last_seen_time|time:'H:i' }}"
+                  data-clothing="{{ report.clothing }}"
+                  data-description="{{ report.notes }}"
+                  data-media='[
+                    {% for media in report.media.all %}
+                      {"url": "{{ media.file.url }}", "type": "{{ media.file_type }}"}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                  ]'
+                >
+                  <td class="poppins-regular">{{ report.report_id }}</td>
+                  <td class="poppins-regular">{{ report.full_name }}</td>
+                  <td class="poppins-regular">
+                    {{ report.reporter.username }}
+                  </td>
+                  <td class="poppins-regular">
+                    {{ report.created_at|date:"F d, Y g:i A" }}
+                  </td>
+                  <td class="poppins-regular {{ report.status|lower|slugify }}">
+                    {{ report.status }}
+                  </td>
+                  <td>
+                    <div class="actionIcon">
+                      <i data-lucide="file-search"></i>
+                      <i
+                        data-lucide="trash"
+                        style="color: #ef4444 !important"
+                      ></i>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %} {% else %}
+                <tr>
+                  <td class="poppins-regular table-empty" colspan="6">
+                    <span>There are currently no cases available.</span>
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+            <div class="pagination">
+              <div class="left">
+                {% if page_obj.paginator.count > 0 %}
+                <span class="poppins-regular">
+                  Showing {{ page_obj.start_index }} to {{ page_obj.end_index }}
+                  of {{ page_obj.paginator.count }} entries
+                </span>
+                {% else %}
+                <span class="poppins-regular">No entries to display</span>
+                {% endif %}
+              </div>
+              <div class="right">
+                {% if page_obj.has_previous %}
+                <a
+                  href="?page={{ page_obj.previous_page_number }}"
+                  class="poppins-regular"
+                  >Prev</a
+                >
+                {% else %}
+                <span class="poppins-regular disabled">Prev</span>
+                {% endif %} {% if page_obj.has_next %}
+                <a
+                  href="?page={{ page_obj.next_page_number }}"
+                  class="poppins-regular"
+                  >Next</a
+                >
+                {% else %}
+                <span class="poppins-regular disabled">Next</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </section>
+        {% include 'components/report_details_modal.html' %}
+      </div>
+    </div>
+
+    <script>
+      const deleteReportUrl = "{% url 'delete_report' %}";
+      const csrfToken = "{{ csrf_token }}";
+    </script>
+    <script src="{% static 'js/reports/modal.js' %}"></script>
+    <script src="{% static 'js/reports/reports.js' %}"></script>
+    <script src="{% static 'js/reports/table.js' %}"></script>
+
+    {% if messages %}
+    <script>
+      {% for message in messages %}
+        Swal.fire({
+          position: "top-end",
+          icon: "{% if 'success' in message.tags %}success{% elif 'error' in message.tags %}error{% else %}info{% endif %}",
+          title: "{{ message|escapejs }}",
+          showConfirmButton: false,
+          timer: 2000,
+          customClass: {
+            popup: "my-swal-popup",
+            title: "poppins-medium my-swal-title",
+            icon: "my-swal-icon",
+          },
+        });
+      {% endfor %}
+    </script>
+    {% endif %} {% if debug %}
+    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+    {% endif %}
+  </body>
+</html>

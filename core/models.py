@@ -88,3 +88,49 @@ class ReportMedia(models.Model):
 
     def __str__(self):
         return f"Media {self.media_id} for Report {self.report.report_id}"
+    
+class Notification(models.Model):
+    ACTION_CHOICES = [
+        ("report_created", "Report Created"),
+        ("report_updated", "Report Updated"),
+        ("status_changed", "Status Changed"),
+        ("new_message", "New Message"),
+    ]
+
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    title = models.CharField(max_length=150)
+    related_report = models.ForeignKey(
+        ReportCase, on_delete=models.CASCADE, null=True, blank=True
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.title
+
+
+class UserNotification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_notifications"
+    )
+    notification = models.ForeignKey(
+        Notification, on_delete=models.CASCADE, related_name="user_notifications"
+    )
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def mark_as_read(self):
+        """Mark this notification as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
+
+    def mark_as_deleted(self):
+        """Soft delete this notification (hide from user view)"""
+        if not self.is_deleted:
+            self.is_deleted = True
+            self.save()
+
+    def __str__(self):
+        return f"{self.user.username} - {self.notification.title}"

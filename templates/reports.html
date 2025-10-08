@@ -12,6 +12,10 @@
 
     <link rel="stylesheet" href="{% static 'css/reports.css' %}" />
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'css/components/details_modal.css' %}"
+    />
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -53,7 +57,7 @@
                 <div class="dropdown-menu">
                   <ul class="poppins-regular">
                     <li>Pending</li>
-                    <li>Denied</li>
+                    <li>Rejected</li>
                     <li style="color: #ef4444">Reset</li>
                   </ul>
                 </div>
@@ -172,8 +176,8 @@
       </div>
     </div>
 
-    <script src="{% static 'js/reports/reports.js' %}"></script>
     <script src="{% static 'js/reports/modal.js' %}"></script>
+    <script src="{% static 'js/reports/reports.js' %}"></script>
     <script src="{% static 'js/reports/image_upload.js' %}"></script>
 
     {% if messages %}
@@ -184,7 +188,7 @@
           icon: "{% if 'success' in message.tags %}success{% elif 'error' in message.tags %}error{% else %}info{% endif %}",
           title: "{{ message|escapejs }}",
           showConfirmButton: false,
-          timer: 2000,
+          timer: 1500,
           customClass: {
             popup: "my-swal-popup",
             title: "poppins-medium my-swal-title",

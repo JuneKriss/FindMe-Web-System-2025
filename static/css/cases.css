@@ -3,8 +3,16 @@
   --secondary: #fca311;
   --subtext: #6b7280;
   --ongoing: #3399ff;
+
+  /* Status Colors */
   --pending: #ffb84d;
-  --denied: #ef4444;
+  --verified: #10b981;
+  --in-progress: #3399ff;
+  --on-hold: #a855f7;
+  --closed-safe: #22c55e;
+  --closed-deceased: #6b7280;
+  --closed-unresolved: #f97316;
+  --rejected: #ef4444;
 }
 
 * {
@@ -52,6 +60,37 @@ section {
 .pagination .left,
 .pagination .right {
   flex: 1;
+}
+
+.head .left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.head .left a {
+  border: none;
+  background-color: var(--primary);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 8px;
+  box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.head .left a svg {
+  width: 1.2em;
+  height: 1.2em;
+  color: #fff;
+  stroke-width: 1.8;
+}
+
+.head .left a span {
+  font-size: 0.875em;
+  color: #fff;
 }
 
 .head .right,
@@ -116,12 +155,14 @@ section {
   color: #000;
 }
 
-.button:hover {
+.button:hover,
+.head .left a:hover {
   transform: scale(1.02);
   box-shadow: rgba(99, 99, 99, 0.3) 0px 4px 12px 0px;
 }
 
-.button:active {
+.button:active,
+.head .left a:active {
   transform: scale(0.96);
   box-shadow: rgba(99, 99, 99, 0.25) 0px 2px 6px 0px;
 }
@@ -225,33 +266,30 @@ section {
   padding: 1rem 0.5rem 0 0.5rem;
 }
 
-.pagination button {
+.pagination a {
   padding: 5px 15px;
   border: 1px solid #d2d2d2;
   background: #fff;
   color: var(--primary);
+  font-size: 0.875em;
   border-radius: 5px;
   cursor: pointer;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
     rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  text-decoration: none;
 }
 
-.pagination button:disabled {
+.pagination .disabled {
   background: #d2d2d2;
   cursor: not-allowed;
+  padding: 5px 15px;
+  display: inline-block;
+  font-size: 0.875em;
 }
 
 .pagination .left span {
   font-size: 0.875em;
   color: var(--subtext);
-}
-
-.pending {
-  color: var(--pending);
-}
-
-.denied {
-  color: var(--denied);
 }
 
 .modal {
@@ -473,4 +511,79 @@ section {
   font-size: 1em;
   font-style: italic;
   color: var(--subtext);
+}
+
+.pending {
+  color: var(--pending);
+}
+
+.verified {
+  color: var(--verified);
+}
+
+.in-progress {
+  color: var(--in-progress);
+}
+
+.on-hold {
+  color: var(--on-hold);
+}
+
+.closed-safe {
+  color: var(--closed-safe);
+}
+
+.closed-deceased {
+  color: var(--closed-deceased);
+}
+
+.closed-unresolved {
+  color: var(--closed-unresolved);
+}
+
+.rejected {
+  color: var(--rejected);
+}
+
+.swal-title-custom {
+  color: #000;
+  font-size: 1.75em;
+  margin-top: -0.5em;
+}
+
+.swal-text-custom {
+  color: var(--subtext);
+  font-size: 0.875em;
+}
+
+.swal-confirm-btn {
+  background-color: #fca311;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+.swal-confirm-btn:hover {
+  background-color: #e2930d;
+}
+
+.swal-cancel-btn {
+  background-color: #e5e7eb;
+  color: var(--primary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: 0.2s ease-in-out;
+}
+.swal-cancel-btn:hover {
+  background-color: #d1d5db;
+}
+
+.swal-custom-popup {
+  border: 1px solid var(--secondary);
+  border-radius: 10px;
 }

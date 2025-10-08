@@ -29,13 +29,12 @@
             <div class="left">
               <div class="search-bar">
                 <i data-lucide="search"></i>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  id="search"
-                  class="poppins-regular"
-                />
+                <input type="text" placeholder="Search" id="search" class="poppins-regular" />
               </div>
+              <a href="{% url 'closed_cases' %}">
+                <i data-lucide="archive"></i>
+                <span class="poppins-regular">Closed Cases</span>
+              </a>
             </div>
             <div class="right">
               <!-- Filter Button -->
@@ -46,9 +45,10 @@
                 </button>
                 <div class="dropdown-menu">
                   <ul class="poppins-regular">
-                    <li>Pending</li>
-                    <li>Filter 2</li>
-                    <li>Filter 3</li>
+                    <li>Verified</li>
+                    <li>In Progress</li>
+                    <li>On Hold</li>
+                    <li style="color: #ef4444">Reset</li>
                   </ul>
                 </div>
               </div>
@@ -61,9 +61,10 @@
                 </button>
                 <div class="dropdown-menu">
                   <ul class="poppins-regular">
+                    <li>ID</li>
                     <li>Date</li>
                     <li>Status</li>
-                    <li>Sort 3</li>
+                    <li style="color: #ef4444">Reset</li>
                   </ul>
                 </div>
               </div>
@@ -83,43 +84,62 @@
                 </tr>
               </thead>
               <tbody>
-                {% for i in "1234567"|make_list %}
-                <tr>
-                  <td class="poppins-regular">001</td>
-                  <td class="poppins-regular">Ferryl Johnson</td>
-                  <td class="poppins-regular ongoing">
-                    Feb 30, 2024, 10:50 a.m.
-                  </td>
-                  <td class="poppins-regular">Mama Johnson</td>
-                  <td class="poppins-regular">Feb 30, 2024</td>
-                  <td class="poppins-regular pending">Pending</td>
-                  <td>
-                    <div class="actionIcon">
-                      <i data-lucide="pen"></i>
-                      <i data-lucide="message-circle"></i>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-                <!-- <tr>
-                  <td class="poppins-regular table-empty" colspan="6">
-                    <span>
-                      There are currently no reports available.
-                    </span>
+                {% if page_obj %}
+                  {% for report in page_obj %}
+                    <tr>
+                      <td class="poppins-regular">{{ report.report_id }}</td>
+                      <td class="poppins-regular">{{ report.full_name }}</td>
+                      <td class="poppins-regular">
+                        <!-- prettier-ignore-start -->
+                          {{ report.last_seen_date|date:'F d, Y' }}, {{ report.last_seen_time|time:'g:i A' }}
+                        <!-- prettier-ignore-end -->
+                      </td>
+                      <td class="poppins-regular">{{ report.reporter.username }}</td>
+                      <td class="poppins-regular">None</td>
+                      <td class="poppins-regular {{ report.status|lower|slugify }}">
+                        {{ report.status }}
+                      </td>
+                      <td>
+                        <div class="actionIcon">
+                          <i data-lucide="pen"></i>
+                          <i data-lucide="message-circle"></i>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td class="poppins-regular table-empty" colspan="6">
+                      <span>There are currently no cases available.</span>
                     </td>
-                  </td>
-                </tr> -->
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
             <div class="pagination">
               <div class="left">
-                <span class="poppins-regular"
-                  >Showing 1 to 10 of 20 entries</span
-                >
+                {% if page_obj.paginator.count > 0 %}
+                  <span class="poppins-regular">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{
+                    page_obj.paginator.count }} entries
+                  </span>
+                {% else %}
+                  <span class="poppins-regular">No entries to display</span>
+                {% endif %}
               </div>
               <div class="right">
-                <button id="prevBtn" class="poppins-regular">Prev</button>
-                <button id="nextBtn" class="poppins-regular">Next</button>
+                {% if page_obj.has_previous %}
+                  <a href="?page={{ page_obj.previous_page_number }}" class="poppins-regular"
+                    >Prev</a
+                  >
+                {% else %}
+                  <span class="poppins-regular disabled">Prev</span>
+                {% endif %}
+                {% if page_obj.has_next %}
+                  <a href="?page={{ page_obj.next_page_number }}" class="poppins-regular">Next</a>
+                {% else %}
+                  <span class="poppins-regular disabled">Next</span>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -129,31 +149,12 @@
 
     <script>
       lucide.createIcons();
-
-      document.querySelectorAll(".dropdown .button").forEach((button) => {
-        button.addEventListener("click", (e) => {
-          const dropdown = e.target.closest(".dropdown");
-          dropdown.classList.toggle("active");
-
-          // Close other dropdowns
-          document.querySelectorAll(".dropdown").forEach((d) => {
-            if (d !== dropdown) d.classList.remove("active");
-          });
-        });
-      });
-
-      // Close dropdown if clicked outside
-      document.addEventListener("click", (e) => {
-        if (!e.target.closest(".dropdown")) {
-          document
-            .querySelectorAll(".dropdown")
-            .forEach((d) => d.classList.remove("active"));
-        }
-      });
     </script>
 
+    <script src="{% static 'js/reports/reports.js' %}"></script>
+
     {% if debug %}
-    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+      <script src="{% static 'django_browser_reload/reload.js' %}"></script>
     {% endif %}
   </body>
 </html>

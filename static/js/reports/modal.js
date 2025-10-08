@@ -1,3 +1,5 @@
+lucide.createIcons();
+
 const setupModal = (triggerSelector, modalId) => {
   const triggers = document.querySelectorAll(triggerSelector);
   const modal = document.getElementById(modalId);

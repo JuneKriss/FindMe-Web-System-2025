@@ -12,7 +12,16 @@ urlpatterns = [
     path("reports/update-status/", views.update_report_status, name="update_report_status"),
     
     path('cases/', views.cases, name='cases'),
+    path("cases/search/", views.search_cases, name="search_cases"),
+
+    path("cases/closed/", views.closed_cases, name="closed_cases"),
+    path("cases/closed/search/", views.search_closed_cases, name="search_closed_cases"),
+    path('delete_report/', views.delete_report, name='delete_report'),
+
     path('notifications/', views.notifications, name='notifications'),
+    path("notifications/mark-read/<int:notif_id>/", views.mark_notification_read, name="mark_notification_read"),
+    path("notifications/delete/<int:notif_id>/", views.delete_notification, name="delete_notification"),
+    path("notifications/count/", views.get_unread_count, name="get_unread_count"),
 
     path("login/", views.login_view, name="login"),
     path('signup/', views.signup_view, name='signup'),

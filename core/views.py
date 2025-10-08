@@ -1,5 +1,5 @@
 import random
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
@@ -12,10 +12,12 @@ import datetime
 from datetime import timedelta
 from django.http import JsonResponse
 from django.db.models import Q
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action 
 from rest_framework.response import Response 
 from rest_framework import status
@@ -25,7 +27,7 @@ from .serializers import AccountSerializer , FamilySerializer, VolunteerSerializ
 from .serializers import ReportSerializer, ReportMediaSerializer
 
 #MODELS
-from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode
+from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode, Notification, UserNotification
 
 # API
 
@@ -202,6 +204,60 @@ class ReportMediaViewSet(viewsets.ModelViewSet):
 # API
 
 # WEB
+
+# Helper Functions
+def create_notification(action, title, related_report=None, recipients=None):
+    # Check for very recent duplicates (within 5 minutes)
+    recent_cutoff = timezone.now() - timedelta(minutes=5)
+    existing = Notification.objects.filter(
+        related_report=related_report,
+        action=action,
+        title=title,
+        created_at__gte=recent_cutoff,
+    ).first()
+
+    if existing:
+        return  # skip very recent duplicates only
+
+    # Create main notification
+    notification = Notification.objects.create(
+        action=action,
+        title=title,
+        related_report=related_report,
+        created_at=timezone.now(),
+    )
+
+    # Default recipients: all police + reporter if applicable
+    if recipients is None:
+        recipients = list(Account.objects.filter(role="police"))
+        if related_report and related_report.reporter not in recipients:
+            recipients.append(related_report.reporter)
+
+    # Create UserNotification entries efficiently
+    UserNotification.objects.bulk_create([
+        UserNotification(user=user, notification=notification)
+        for user in recipients
+    ])
+
+def unread_notifications_count(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return {"unread_notifications_count": 0}
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        return {"unread_notifications_count": 0}
+
+    count = UserNotification.objects.filter(user=user, is_read=False).count()
+    return {"unread_notifications_count": count}
+
+def get_unread_count(request):
+    user_id = request.session.get('user_id')
+    if user_id:
+        count = UserNotification.objects.filter(user_id=user_id, is_read=False, is_deleted=False).count()
+        return JsonResponse({'count': count})
+    return JsonResponse({'count': 0})
+# Helper Functions
 
 def login(request):
     return render(request, 'login.html')
@@ -398,7 +454,7 @@ def reports(request):
         return redirect("login")
 
     # Get all reports (latest first)
-    all_reports = ReportCase.objects.select_related("reporter").order_by("-created_at")
+    all_reports = ReportCase.objects.select_related("reporter").order_by("-created_at").filter(status__in=["Pending", "Rejected"])
 
     # Pagination (10 per page)
     paginator = Paginator(all_reports, 10)
@@ -498,6 +554,12 @@ def submit_report(request):
                 file_type=img.content_type,
             )
 
+        create_notification(
+            action="report_created",
+            title=f"{user.username} submitted a new missing person report for {report.full_name}.",
+            related_report=report,
+        )
+
         messages.success(request, "Report submitted successfully.")
         return redirect("reports")
 
@@ -508,7 +570,10 @@ def search_reports(request):
     sort = request.GET.get("sort", "created_at")
     filter_option = request.GET.get("filter", "").lower()
 
-    reports = ReportCase.objects.all()
+    reports = (
+        ReportCase.objects.select_related("reporter")
+        .filter(status__in=["Pending", "Rejected"])
+    )
 
     if query:
         reports = reports.filter(
@@ -542,11 +607,26 @@ def search_reports(request):
     results = []
     for r in reports:
         results.append({
-            "id": r.report_id,
+            "report_id": r.report_id,
             "full_name": r.full_name,
-            "reporter": r.reporter.username,
+            "reporter": r.reporter.username if r.reporter else "Unknown",
             "status": r.status,
-            "created_at": r.created_at.strftime("%B %d, %Y %I:%M %p"),
+            "created_at": r.created_at.strftime("%B %d, %Y %I:%M %p") if r.created_at else "",
+            "age": r.age,
+            "gender": r.gender,
+            "last_seen_date": r.last_seen_date.strftime("%Y-%m-%d") if r.last_seen_date else "",
+            "last_seen_time": r.last_seen_time.strftime("%H:%M") if r.last_seen_time else "",
+            "last_seen_location": r.last_seen_location,
+            "clothing": r.clothing,
+            "notes": r.notes or "",
+            "media": [
+                {
+                    "url": m.file.url,
+                    "type": m.file_type or "",
+                    "id": m.media_id,
+                }
+                for m in r.media.all()
+            ],
         })
 
     return JsonResponse({"results": results})
@@ -556,32 +636,44 @@ def update_report_status(request):
         report_id = request.POST.get("report_id")
         status = request.POST.get("status")
 
+        # Detect referring page
+        referer = request.META.get("HTTP_REFERER", "")
+        redirect_target = "reports"  # default
+
+        if "cases/closed" in referer:  # match actual path
+            redirect_target = "closed_cases"
+
         if not report_id:
             messages.error(request, "Report ID is missing.")
-            return redirect("reports")
+            return redirect(redirect_target)
 
         try:
             report = ReportCase.objects.get(report_id=report_id)
         except ReportCase.DoesNotExist:
             messages.error(request, "Report not found.")
-            return redirect("reports")
+            return redirect(redirect_target)
 
-        # --- backend validation ---
         if not status:
             messages.error(request, "Please select a status.")
-            return redirect("reports")
+            return redirect(redirect_target)
 
         valid_statuses = [choice[0] for choice in ReportCase.STATUS_CHOICES]
         if status not in valid_statuses:
             messages.error(request, "Invalid status.")
-            return redirect("reports")
+            return redirect(redirect_target)
 
-        # update
+        # Update report
         report.status = status
         report.save()
 
-        messages.success(request, f"Report status updated successfully.")
-        return redirect("reports")
+        create_notification(
+            action="status_changed",
+            title=f"The status of report #{report.report_id} has been changed to {status}.",
+            related_report=report,
+        )
+
+        messages.success(request, "Report status updated successfully.")
+        return redirect(redirect_target)
 
     return redirect("reports")
 
@@ -597,10 +689,110 @@ def cases(request):
         messages.error(request, "User not found.")
         return redirect("login")
 
-    return render(request, "cases.html", {"username": user.username})
+    all_cases = (
+        ReportCase.objects.select_related("reporter")
+        .exclude(status__in=[
+            "Pending",
+            "Rejected",
+            "Closed - Safe",
+            "Closed - Deceased",
+            "Closed - Unresolved",
+        ])
+        .order_by("-created_at")
+    )
 
-def notifications(request):
-    user_id = request.session.get('user_id')
+    paginator = Paginator(all_cases, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "cases.html",
+        {
+            "username": user.username,
+            "page_obj": page_obj,
+            "paginator": paginator,
+        },
+    )
+
+def search_cases(request):
+    query = request.GET.get("q", "").strip()
+    sort = request.GET.get("sort", "created_at")
+    filter_option = request.GET.get("filter", "").lower()
+
+    # Exclude Pending, Rejected, and any Closed statuses
+    reports = (
+        ReportCase.objects.select_related("reporter")
+        .exclude(
+            status__in=[
+                "Pending",
+                "Rejected",
+                "Closed - Safe",
+                "Closed - Deceased",
+                "Closed - Unresolved",
+            ]
+        )
+    )
+
+    # Search logic
+    if query:
+        reports = reports.filter(
+            Q(full_name__icontains=query)
+            | Q(reporter__username__icontains=query)
+            | Q(age__icontains=query)
+            | Q(gender__icontains=query)
+            | Q(last_seen_date__icontains=query)
+            | Q(last_seen_time__icontains=query)
+            | Q(last_seen_location__icontains=query)
+            | Q(clothing__icontains=query)
+            | Q(notes__icontains=query)
+            | Q(status__icontains=query)
+        )
+
+    # Sorting logic
+    if sort == "id":
+        reports = reports.order_by("report_id")
+    elif sort == "date":
+        reports = reports.order_by("-created_at")
+    elif sort == "status":
+        reports = reports.order_by("status")
+    else:
+        reports = reports.order_by("-created_at")
+
+    # Filter logic
+    if filter_option and filter_option != "reset":
+        reports = reports.filter(status__iexact=filter_option)
+
+    # Serialize results
+    results = []
+    for r in reports:
+        results.append({
+            "report_id": r.report_id,
+            "full_name": r.full_name,
+            "reporter": r.reporter.username if r.reporter else "Unknown",
+            "status": r.status,
+            "created_at": r.created_at.strftime("%B %d, %Y %I:%M %p") if r.created_at else "",
+            "age": r.age,
+            "gender": r.gender,
+            "last_seen_date": r.last_seen_date.strftime("%Y-%m-%d") if r.last_seen_date else "",
+            "last_seen_time": r.last_seen_time.strftime("%H:%M") if r.last_seen_time else "",
+            "last_seen_location": r.last_seen_location,
+            "clothing": r.clothing,
+            "notes": r.notes or "",
+            "media": [
+                {
+                    "url": m.file.url,
+                    "type": m.file_type or "",
+                    "id": m.media_id,
+                }
+                for m in r.media.all()
+            ],
+        })
+
+    return JsonResponse({"results": results})
+
+def closed_cases(request):
+    user_id = request.session.get("user_id")
 
     if not user_id:
         return redirect("login")  # Force login if no session
@@ -611,7 +803,181 @@ def notifications(request):
         messages.error(request, "User not found.")
         return redirect("login")
 
-    return render(request, "notifications.html", {"username": user.username})
+    # Only include closed cases
+    closed_statuses = ["Closed - Safe", "Closed - Deceased", "Closed - Unresolved"]
+
+    all_cases = (
+        ReportCase.objects.select_related("reporter")
+        .filter(status__in=closed_statuses)
+        .order_by("-created_at")
+    )
+
+    paginator = Paginator(all_cases, 20)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "closed_cases.html",
+        {
+            "username": user.username,
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "status_choices": ReportCase.STATUS_CHOICES, 
+        },
+    )
+
+def search_closed_cases(request):
+    q = request.GET.get("q", "").strip()
+    filter_option = request.GET.get("filter", "").lower()
+    sort_option = request.GET.get("sort", "").lower()
+
+    closed_statuses = [
+        "Closed - Safe",
+        "Closed - Deceased",
+        "Closed - Unresolved",
+    ]
+
+    cases = ReportCase.objects.select_related("reporter").filter(status__in=closed_statuses)
+
+    if q:
+        cases = cases.filter(
+            Q(full_name__icontains=q) |
+            Q(reporter__username__icontains=q)
+        )
+
+    if filter_option:
+        if filter_option == "safe":
+            cases = cases.filter(status="Closed - Safe")
+        elif filter_option == "deceased":
+            cases = cases.filter(status="Closed - Deceased")
+        elif filter_option == "unresolved":
+            cases = cases.filter(status="Closed - Unresolved")
+
+    if sort_option == "id":
+        cases = cases.order_by("report_id")
+    elif sort_option == "date":
+        cases = cases.order_by("-created_at")
+    elif sort_option == "status":
+        cases = cases.order_by("status")
+    else:
+        cases = cases.order_by("-created_at")
+
+    data = [
+        {
+            "report_id": c.report_id,
+            "full_name": c.full_name,
+            "reporter": c.reporter.username,
+            "created_at": c.created_at.strftime("%B %d, %Y %I:%M %p"),
+            "status": c.status,
+        }
+        for c in cases
+    ]
+
+    return JsonResponse({"results": data})
+
+@require_POST
+def delete_report(request):
+    report_id = request.POST.get("report_id")
+    if not report_id:
+        return JsonResponse({"success": False, "message": "Missing report ID."}, status=400)
+
+    report = get_object_or_404(ReportCase, report_id=report_id)
+    report.delete()
+    return JsonResponse({"success": True, "message": "Report deleted successfully!"})
 
 
+def notifications(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect("login")
 
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("login")
+
+    user_notifications = (
+        UserNotification.objects
+        .filter(user=user, is_deleted=False)
+        .select_related("notification")
+        .order_by("-notification__created_at")
+    )
+    now = timezone.now()
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+
+    processed_notifications = []
+    for user_notif in user_notifications:
+        notif = user_notif.notification
+        created = notif.created_at
+        diff = now - created
+
+        # Default formatted display
+        if created.date() == today:
+            seconds = diff.seconds
+            if seconds < 60:
+                display_time = "just now"
+            elif seconds < 3600:
+                minutes = seconds // 60
+                display_time = f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+            else:
+                hours = seconds // 3600
+                display_time = f"{hours} hour{'s' if hours != 1 else ''} ago"
+
+        elif created.date() == yesterday:
+            display_time = "Yesterday"
+
+        else:
+            display_time = created.strftime("%b %d")  # e.g. "Oct 2"
+
+        processed_notifications.append({
+            "user_notif": user_notif,
+            "notif": notif,
+            "display_time": display_time,
+        })
+
+    # Group notifications (optional — like your HTML layout)
+    grouped_notifications = {
+        "today": [n for n in processed_notifications if n["notif"].created_at.date() == today],
+        "yesterday": [n for n in processed_notifications if n["notif"].created_at.date() == yesterday],
+        "earlier": [n for n in processed_notifications if n["notif"].created_at.date() < yesterday],
+    }
+
+    return render(request, "notifications.html", {
+        "username": user.username,
+        "grouped_notifications": grouped_notifications,
+    })
+
+@csrf_exempt
+def mark_notification_read(request, notif_id):
+    if request.method == "POST":
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return JsonResponse({"success": False, "message": "Not logged in"}, status=401)
+
+        try:
+            user_notif = UserNotification.objects.get(id=notif_id, user_id=user_id)
+            user_notif.mark_as_read()
+            return JsonResponse({"success": True})
+        except UserNotification.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Notification not found"}, status=404)
+
+    return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
+
+@csrf_exempt
+def delete_notification(request, notif_id):
+    if request.method == "POST":
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return JsonResponse({"success": False, "message": "Not logged in"}, status=401)
+
+        try:
+            user_notif = UserNotification.objects.get(id=notif_id, user_id=user_id)
+            user_notif.mark_as_deleted()
+            return JsonResponse({"success": True})
+        except UserNotification.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Notification not found"}, status=404)
+
+    return JsonResponse({"success": False, "message": "Invalid request"}, status=400)

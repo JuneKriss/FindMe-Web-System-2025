@@ -37,19 +37,21 @@
                 <span class="poppins-regular">Reports</span>
               </a>
             </li>
-            <li class="{% if request.path == '/cases/' %}active{% endif %}">
+            <li
+              class="{% if request.path == '/cases/' or request.path == '/cases/closed/' %}active{% endif %}"
+            >
               <a href="{% url 'cases' %}">
                 <i data-lucide="briefcase"></i>
                 <span class="poppins-regular">Cases</span>
               </a>
             </li>
-            <li
-              class="{% if request.path == '/notifications/' %}active{% endif %}"
-            >
+            <li class="{% if request.path == '/notifications/' %}active{% endif %}">
               <a href="{% url 'notifications' %}" class="nav-notif">
                 <i data-lucide="bell"></i>
                 <span class="poppins-regular">Notifications</span>
-                <span class="notif-badge poppins-regular">4</span>
+                {% if notification_count > 0 %}
+                  <span class="notif-badge poppins-regular">{{ notification_count }}</span>
+                {% endif %}
               </a>
             </li>
           </ul>
@@ -91,18 +93,38 @@
       lucide.createIcons();
 
       const userName = "{{ username|escapejs }}";
-      document.getElementById("userInitial").textContent = userName
-        .charAt(0)
-        .toUpperCase();
+      document.getElementById("userInitial").textContent = userName.charAt(0).toUpperCase();
 
       const toggleSubMenu = (button) => {
         button.nextElementSibling.classList.toggle("show");
         button.classList.toggle("rotate");
       };
+
+      function updateNotificationCount() {
+        fetch("{% url 'get_unread_count' %}")
+          .then((response) => response.json())
+          .then((data) => {
+            const countEl = document.getElementById("notif-count");
+            if (countEl) {
+              if (data.count > 0) {
+                countEl.textContent = data.count;
+                countEl.style.display = "inline";
+              } else {
+                countEl.style.display = "none";
+              }
+            }
+          })
+          .catch((err) => console.error("Error updating notification count:", err));
+      }
+
+      // Run immediately and refresh every 10 seconds
+      updateNotificationCount();
+      setInterval(updateNotificationCount, 10000);
     </script>
 
+
     {% if debug %}
-    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+      <script src="{% static 'django_browser_reload/reload.js' %}"></script>
     {% endif %}
   </body>
 </html>
