@@ -15,8 +15,8 @@ from django.db.models import Q, Count
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, response, decorators, permissions
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action 
 from rest_framework.response import Response 
 from rest_framework import status
@@ -24,26 +24,22 @@ from rest_framework import status
 #SERIALIZER
 from .serializers import AccountSerializer , FamilySerializer, VolunteerSerializer
 from .serializers import ReportSerializer, ReportMediaSerializer
+from .serializers import ReportMessageSerializer, SightingSerializer, SightingMediaSerializer
 
 #MODELS
-from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode, Notification, UserNotification
+from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode, Notification, UserNotification, ReportAssistance, ReportMessage, ReportSighting, SightingMedia
 
 # API
-
 import random
 from datetime import timedelta
-
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
-
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from .models import Account, EmailVerificationCode
 from .serializers import AccountSerializer
-
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
@@ -173,19 +169,67 @@ class VolunteerViewSet(viewsets.ModelViewSet):
 
 class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == "volunteer":
-            # Volunteers see all reports
-            return ReportCase.objects.all().order_by("-created_at")
-        else:
-            # Families only see their own reports
-            return ReportCase.objects.filter(reporter=user).order_by("-created_at")
 
-    def perform_create(self, serializer):
-        serializer.save(reporter=self.request.user)
+        # Default list view
+        if user.role == "volunteer":
+            # Return all reports (including ones they assist)
+            return ReportCase.objects.exclude(reporter=user).order_by("-created_at")
+
+        # Family sees only their own reports
+        return ReportCase.objects.filter(reporter=user).order_by("-created_at")
+
+    @action(detail=False, methods=['get'])
+    def available(self, request):
+        # Reports available for the volunteer to assist
+        user = request.user
+        if user.role != 'volunteer':
+            return Response({'detail': 'Access denied.'}, status=403)
+
+        reports = ReportCase.objects.filter(
+            status='Verified'  # <-- Only verified reports
+        ).exclude(
+            reporter=user
+        ).exclude(
+            assistances__volunteer=user
+        ).order_by('-created_at')
+
+        serializer = self.get_serializer(reports, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def assist(self, request, pk=None):
+        user = request.user
+        report = self.get_object()
+
+        if user.role != 'volunteer':
+            return Response({'detail': 'Only volunteers can assist.'}, status=403)
+
+        if report.reporter == user:
+            return Response({'detail': 'You cannot assist your own report.'}, status=400)
+
+        if ReportAssistance.objects.filter(report=report, volunteer=user, status='active').exists():
+            return Response({'detail': 'You are already assisting this case.'}, status=400)
+
+        ReportAssistance.objects.create(report=report, volunteer=user)
+        report.status = 'In Progress'
+        report.save(update_fields=['status'])
+
+        return Response({'detail': 'You are now assisting this report.'})
+
+    @action(detail=False, methods=['get'])
+    def my_assisted(self, request):
+        # Reports the volunteer is already assisting
+        user = request.user
+        if user.role != 'volunteer':
+            return Response({'detail': 'Access denied.'}, status=403)
+        
+        reports = ReportCase.objects.filter(assistances__volunteer=user).distinct()
+        serializer = self.get_serializer(reports, many=True)
+        return Response(serializer.data)
 
 
 class ReportMediaViewSet(viewsets.ModelViewSet):
@@ -200,9 +244,46 @@ class ReportMediaViewSet(viewsets.ModelViewSet):
         file_type = file.content_type if file else None
         serializer.save(file_type=file_type)
 
+class ReportMessageViewSet(viewsets.ModelViewSet):
+    serializer_class = ReportMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        report_id = self.request.query_params.get('report')
+        if report_id:
+            return ReportMessage.objects.filter(report_id=report_id).order_by('created_at')
+        return ReportMessage.objects.none()
+    
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+class SightingViewSet(viewsets.ModelViewSet):
+    serializer_class = SightingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        report_id = self.request.query_params.get('report')
+        if report_id:
+            return ReportSighting.objects.filter(report_id=report_id).order_by('-created_at')
+        return ReportSighting.objects.all().order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(volunteer=self.request.user)
+
+class SightingMediaViewSet(viewsets.ModelViewSet):
+    serializer_class = SightingMediaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return SightingMedia.objects.filter(sighting__volunteer=self.request.user)
+
+    def perform_create(self, serializer):
+        file = self.request.FILES.get("file")
+        file_type = file.content_type if file else None
+        serializer.save(file_type=file_type)
+
 # API
 
-# WEB
 
 # Helper Functions
 def create_notification(action, title, related_report=None, recipients=None):

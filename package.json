@@ -1,4 +1,8 @@
 {
+  "name": "FindMe-Web-System-2025",
+  "dependencies": {
+    "jwt-decode": "^4.0.0"
+  },
   "devDependencies": {
     "prettier-plugin-django-template": "^0.1.1"
   }
