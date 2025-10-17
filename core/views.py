@@ -11,12 +11,12 @@ from django.http import JsonResponse
 import datetime
 from datetime import timedelta
 from django.http import JsonResponse
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
-from rest_framework import viewsets, response, decorators, permissions
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import viewsets, permissions
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action 
 from rest_framework.response import Response 
 from rest_framework import status
