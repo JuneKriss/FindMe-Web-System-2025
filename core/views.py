@@ -11,10 +11,9 @@ from django.http import JsonResponse
 import datetime
 from datetime import timedelta
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-
 
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -427,11 +426,12 @@ def logout_view(request):
     request.session.flush()  # clears all session data (user_id, username, etc.)
     return redirect("login")
 
+
 def dashboard(request):
     user_id = request.session.get('user_id')
 
     if not user_id:
-        return redirect("login")  # Force login if no session
+        return redirect("login")
 
     try:
         user = Account.objects.get(account_id=user_id)
@@ -439,7 +439,64 @@ def dashboard(request):
         messages.error(request, "User not found.")
         return redirect("login")
 
-    return render(request, "dashboard.html", {"username": user.username})
+    # --- Safely fetch recent reports ---
+    recent_reports = (
+        ReportCase.objects.select_related("reporter")
+        .prefetch_related("media")
+        .filter(status__in=["Pending", "Rejected"])
+        .order_by("-report_id")[:4]
+    )
+
+    recent_cases = (
+        ReportCase.objects.select_related("reporter")
+        .exclude(status__in=["Pending", "Rejected"])
+        .order_by("-report_id")[:5]
+    )
+
+    # --- Reports per month (safe version) ---
+    six_months_ago = timezone.now() - timedelta(days=180)
+    monthly_reports = (
+        ReportCase.objects.filter(created_at__gte=six_months_ago)
+        .values("created_at")
+    )
+
+    # Convert manually, ignoring invalid datetimes
+    from datetime import datetime
+    months = {}
+    for r in monthly_reports:
+        dt = r["created_at"]
+        if not dt or str(dt).startswith("0000-00-00"):
+            continue  # skip invalid datetimes
+        try:
+            month_label = dt.strftime("%b %Y")
+            months[month_label] = months.get(month_label, 0) + 1
+        except Exception:
+            continue
+
+    months_list = list(months.keys())
+    report_counts = list(months.values())
+
+    # --- Counts ---
+    total_reports = ReportCase.objects.count()
+    active_cases = ReportCase.objects.filter(status__in=["Verified", "In Progress", "On Hold"]).count()
+    total_users = Account.objects.count()
+    resolved_cases = ReportCase.objects.filter(
+        status__in=["Closed - Safe", "Closed - Deceased", "Closed - Unresolved"]
+    ).count()
+    
+    context = {
+        "username": user.username,
+        "recent_reports": recent_reports,
+        "recent_cases": recent_cases,
+        "months": months_list,
+        "report_counts": report_counts,
+        "total_reports": total_reports,
+        "active_cases": active_cases,
+        "total_users": total_users,
+        "resolved_cases": resolved_cases,
+    }
+
+    return render(request, "dashboard.html", context)
 
 def reports(request):
     user_id = request.session.get('user_id')

@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <title>Dashboard</title>
   </head>
@@ -25,79 +26,151 @@
           <h2 class="poppins-medium">Dashboard</h2>
         </div>
         <section class="counts">
-          <div class="countBox">
-            <i data-lucide="info"></i>
-            <div class="texts">
-              <span class="poppins-regular">Total Count</span>
-              <h2 class="poppins-semibold">500</h2>
+          <div class="counts-container">
+             <div class="countBox">
+              <i data-lucide="file-text"></i>
+              <div class="texts">
+                <span class="poppins-regular">Total Reports</span>
+                <h2 class="poppins-semibold">{{ total_reports }}</h2>
+              </div>
+            </div>
+
+            <div class="countBox">
+              <i data-lucide="activity"></i>
+              <div class="texts">
+                <span class="poppins-regular">Active Cases</span>
+                <h2 class="poppins-semibold">{{ active_cases }}</h2>
+              </div>
+            </div>
+
+            <div class="countBox">
+              <i data-lucide="users"></i>
+              <div class="texts">
+                <span class="poppins-regular">Total Users</span>
+                <h2 class="poppins-semibold">{{ total_users }}</h2>
+              </div>
+            </div>
+
+            <div class="countBox">
+              <i data-lucide="check-circle"></i>
+              <div class="texts">
+                <span class="poppins-regular">Resolved Cases</span>
+                <h2 class="poppins-semibold">{{ resolved_cases }}</h2>
+              </div>
             </div>
           </div>
-          <div class="countBox">
-            <i data-lucide="info"></i>
-            <div class="texts">
-              <span class="poppins-regular">Total Count</span>
-              <h2 class="poppins-semibold">500</h2>
-            </div>
-          </div>
-          <div class="countBox">
-            <i data-lucide="info"></i>
-            <div class="texts">
-              <span class="poppins-regular">Total Count</span>
-              <h2 class="poppins-semibold">500</h2>
-            </div>
-          </div>
-          <div class="countBox">
-            <i data-lucide="info"></i>
-            <div class="texts">
-              <span class="poppins-regular">Total Count</span>
-              <h2 class="poppins-semibold">500</h2>
-            </div>
+
+          <div class="chart-container">
+            <canvas id="reportsChart"></canvas>
           </div>
         </section>
-        <section class="recentReports">
+        <!-- <section class="recentReports">
           <h2 class="sectionTitle poppins-bold">Recent Reports</h2>
           <div class="reportsContainer">
             {% for i in "1234"|make_list %}
-            <div class="reportCard">
-              <div class="reportHead">
-                <span class="poppins-regular">Incident ID: #</span>
-                <div class="statusBox">
-                  <span class="poppins-regular">Open</span>
-                </div>
-              </div>
-              <div class="reportImg">
-                <img
-                  src="{% static 'images/samplePerson.jpeg' %}"
-                  onclick="openImageModal(this)"
-                  loading="lazy"
-                />
-              </div>
-              <div class="reportInfo">
-                <h3 class="poppins-regular">John Doe</h3>
-                <p class="poppins-regular">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Mauris id tortor turpis. Lorem ipsum dolor sit amet,
-                  consectetur adipiscing elit. Mauris id tortor turpis.
-                </p>
-                <div class="bottomContainer">
-                  <div class="details">
-                    <div class="iconGroup">
-                      <i data-lucide="map-pin"></i>
-                      <span class="poppins-regular">Barangay LA</span>
-                    </div>
-                    <div class="iconGroup">
-                      <i data-lucide="calendar"></i>
-                      <span class="poppins-regular">August 21, 2025</span>
-                    </div>
-                  </div>
-                  <a href="#">
-                    <span class="poppins-regular">More</span>
-                    <i data-lucide="arrow-right"></i>
-                  </a>
-                </div>
+          <div class="reportCard">
+            <div class="reportHead">
+              <span class="poppins-regular">Incident ID: #</span>
+              <div class="statusBox">
+                <span class="poppins-regular">Open</span>
               </div>
             </div>
-            {% endfor %}
+            <div class="reportImg">
+              <img
+                src="{% static 'images/samplePerson.jpeg' %}"
+                onclick="openImageModal(this)"
+                loading="lazy"
+              />
+            </div>
+            <div class="reportInfo">
+              <h3 class="poppins-regular">John Doe</h3>
+              <p class="poppins-regular">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris id tortor turpis.
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris id tortor turpis.
+              </p>
+              <div class="bottomContainer">
+                <div class="details">
+                  <div class="iconGroup">
+                    <i data-lucide="map-pin"></i>
+                    <span class="poppins-regular">Barangay LA</span>
+                  </div>
+                  <div class="iconGroup">
+                    <i data-lucide="calendar"></i>
+                    <span class="poppins-regular">August 21, 2025</span>
+                  </div>
+                </div>
+                <a href="#">
+                  <span class="poppins-regular">More</span>
+                  <i data-lucide="arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+          </div>
+        </section> -->
+        <section class="recentReports">
+          <h2 class="sectionTitle poppins-bold">Recent Reports</h2>
+          <div class="reportsContainer">
+            {% if recent_reports %}
+              {% for report in recent_reports %}
+                <div class="reportCard">
+                  <div class="reportHead">
+                    <span class="poppins-regular">Incident ID: #{{ report.report_id }}</span>
+                    <div class="statusBox">
+                      <span class="poppins-regular">{{ report.status }}</span>
+                    </div>
+                  </div>
+
+                  <div class="reportImg">
+                    {% if report.media.all %}
+                      {% for media in report.media.all %}
+                        <img
+                          src="{{ media.file.url }}"
+                          alt="Report Image"
+                          data-report-id="{{ report.report_id }}"
+                          data-index="{{ forloop.counter0 }}"
+                          loading="lazy"
+                          onclick="openImageModal('{{ report.report_id }}', {{ forloop.counter0 }})"
+                        />
+                      {% endfor %}
+                    {% else %}
+                      <img
+                        src="{% static 'images/samplePerson.jpeg' %}"
+                        alt="No image available"
+                        loading="lazy"
+                      />
+                    {% endif %}
+                  </div>
+
+                  <div class="reportInfo">
+                    <h3 class="poppins-regular">{{ report.full_name }}</h3>
+                    <p class="poppins-regular">{{ report.notes|truncatechars:120 }}</p>
+
+                    <div class="bottomContainer">
+                      <div class="details">
+                        <div class="iconGroup">
+                          <i data-lucide="map-pin"></i>
+                          <span class="poppins-regular">{{ report.last_seen_location }}</span>
+                        </div>
+                        <div class="iconGroup">
+                          <i data-lucide="calendar"></i>
+                          <span class="poppins-regular">
+                            {{ report.created_at|date:"F j, Y" }}
+                          </span>
+                        </div>
+                      </div>
+                      <a href="{% url 'reports' %}?report_id={{ report.report_id }}">
+                        <span class="poppins-regular">More</span>
+                        <i data-lucide="arrow-right"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="poppins-regular reports-empty">No recent reports available.</p>
+            {% endif %}
           </div>
         </section>
         <section class="cases">
@@ -114,25 +187,49 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- {% for i in "12345"|make_list %}
-                <tr>
-                  <td class="poppins-regular">001</td>
-                  <td class="poppins-regular">Ferryl Johnson</td>
-                  <td class="poppins-regular ongoing">Ongoing</td>
-                  <td class="poppins-regular">February 30, 2024</td>
-                  <td>
-                    <div class="actionIcon">
-                      <i data-lucide="pen"></i>
-                      <i data-lucide="info"></i>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %} -->
-                <tr>
-                  <td class="poppins-regular table-empty" colspan="5">
-                    <span>There are currently no cases available.</span>
-                  </td>
-                </tr>
+                {% if recent_cases %}
+                  {% for case in recent_cases %}
+                    <tr>
+                      <td class="poppins-regular">#{{ case.report_id }}</td>
+                      <td class="poppins-regular">{{ case.full_name }}</td>
+                      <td
+                        class="poppins-regular
+                        {% if case.status == 'Pending' %}
+                          status-pending
+                        {% elif case.status == 'Verified' %}
+                          status-verified
+                        {% elif case.status == 'In Progress' %}
+                          status-in-progress
+                        {% elif case.status == 'On Hold' %}
+                          status-on-hold
+                        {% elif case.status == 'Closed - Safe' %}
+                          status-closed-safe
+                        {% elif case.status == 'Closed - Deceased' %}
+                          status-closed-deceased
+                        {% elif case.status == 'Closed - Unresolved' %}
+                          status-closed-unresolved
+                        {% elif case.status == 'Rejected' %}
+                          status-rejected
+                        {% endif %}"
+                      >
+                        {{ case.status }}
+                      </td>
+                      <td class="poppins-regular">{{ case.created_at|date:"F j, Y" }}</td>
+                      <td>
+                        <div class="actionIcon">
+                          <i data-lucide="pen"></i>
+                          <i data-lucide="info"></i>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td class="poppins-regular table-empty" colspan="5">
+                      <span>There are currently no cases available.</span>
+                    </td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
@@ -141,40 +238,64 @@
 
       <div id="imgModal" class="img-modal">
         <span class="close" onclick="closeImageModal()">&times;</span>
+
+        <!-- Left Arrow -->
+        <button class="mediaArrow" id="prevArrow" onclick="changeImage(-1)">
+          <i data-lucide="chevron-left"></i>
+        </button>
+
+        <!-- Image container -->
         <img class="img-modal-content" id="modalImg" />
+
+        <!-- Right Arrow -->
+        <button class="mediaArrow" id="nextArrow" onclick="changeImage(1)">
+          <i data-lucide="chevron-right"></i>
+        </button>
+
+        <!-- Dots -->
+        <div class="mediaDots" id="mediaDots"></div>
       </div>
     </div>
 
     <script>
       lucide.createIcons();
 
-      const modal = document.getElementById("imgModal");
-      const modalImg = document.getElementById("modalImg");
+      const ctx = document.getElementById("reportsChart").getContext("2d");
 
-      window.addEventListener("load", () => {
-        modal.style.display = "none";
-      });
-
-      function openImageModal(imgElement) {
-        modal.style.display = "flex";
-        modalImg.src = imgElement.src;
-      }
-
-      function closeImageModal() {
-        modal.style.display = "none";
-      }
-
-      modal.addEventListener("click", function (e) {
-        if (e.target === this) {
-          closeImageModal();
+      const chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: {{ months|safe }},
+          datasets: [{
+            label: "Reports Over Time",
+            data: {{ report_counts|safe }},
+            backgroundColor: "rgba(20, 33, 61, 1)",
+            borderColor: "rgba(20, 33, 61, 1)",
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true, position: "top" },
+            title: {
+              display: true,
+              text: "Reports Created in the Last 6 Months",
+              font: { size: 16, family: "Poppins" }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+          }
         }
       });
-
-      modal.removeEventListener("click", backgroundClickHandler);
     </script>
 
+    <script src="{% static 'js/dashboard/modal.js' %}"></script>
+
     {% if debug %}
-    <script src="{% static 'django_browser_reload/reload.js' %}"></script>
+      <script src="{% static 'django_browser_reload/reload.js' %}"></script>
     {% endif %}
   </body>
 </html>

@@ -26,9 +26,8 @@ const setupModal = (triggerSelector, modalId) => {
         if (row) {
           const rawDate = row.dataset.last_seen_date || "";
 
-          modal.querySelector(
-            "#report_id"
-          ).innerHTML = `<h3 class="poppins-medium" id="report_id">Report #${row.dataset.id}</h3>`;
+          modal.querySelector("#report_id").innerHTML =
+            `<h3 class="poppins-medium" id="report_id">Report #${row.dataset.id}</h3>`;
           modal.querySelector("#fullName").value = row.dataset.name || "";
           modal.querySelector("#age").value = row.dataset.age || "";
           modal.querySelector("#gender").value = row.dataset.gender || "";
@@ -42,11 +41,9 @@ const setupModal = (triggerSelector, modalId) => {
             }
           }
 
-          modal.querySelector("#last_seen_time").value =
-            row.dataset.last_seen_time || "";
+          modal.querySelector("#last_seen_time").value = row.dataset.last_seen_time || "";
           modal.querySelector("#clothing").value = row.dataset.clothing || "";
-          modal.querySelector("#description").value =
-            row.dataset.description || "";
+          modal.querySelector("#description").value = row.dataset.description || "";
           modal.querySelector("#reported_at").value = row.dataset.created || "";
 
           const statusSelect = modal.querySelector("#statusSelect");
@@ -56,11 +53,9 @@ const setupModal = (triggerSelector, modalId) => {
 
           const statusBadge = modal.querySelector(".status-badge");
           const statusText = row.children[4].textContent.trim();
-          statusBadge.className = `poppins-regular status-badge ${slugify(
-            statusText
-          )}`;
+          statusBadge.className = `poppins-regular status-badge ${slugify(statusText)}`;
           statusBadge.innerHTML = `<span class="status-dot ${slugify(
-            statusText
+            statusText,
           )}"></span> ${statusText}`;
 
           const reportIdField = modal.querySelector("#reportIdField");
@@ -69,9 +64,7 @@ const setupModal = (triggerSelector, modalId) => {
           }
 
           //Handle Media
-          const mediaData = row.dataset.media
-            ? JSON.parse(row.dataset.media)
-            : [];
+          const mediaData = row.dataset.media ? JSON.parse(row.dataset.media) : [];
           const mediaContainer = modal.querySelector(".media");
           const dotsContainer = modal.querySelector(".mediaDots");
 
@@ -108,12 +101,10 @@ const setupModal = (triggerSelector, modalId) => {
           };
 
           modal.querySelector("#prevArrow").onclick = () => {
-            if (slides.length > 0)
-              showSlide((currentIndex - 1 + slides.length) % slides.length);
+            if (slides.length > 0) showSlide((currentIndex - 1 + slides.length) % slides.length);
           };
           modal.querySelector("#nextArrow").onclick = () => {
-            if (slides.length > 0)
-              showSlide((currentIndex + 1) % slides.length);
+            if (slides.length > 0) showSlide((currentIndex + 1) % slides.length);
           };
         }
       }
@@ -172,4 +163,42 @@ document.addEventListener("click", (e) => {
   if (e.target.classList.contains("clickable-img")) {
     openImageModal(e.target);
   }
+});
+
+//Dashboard Redirect
+window.addEventListener("load", () => {
+  const params = new URLSearchParams(window.location.search);
+  const reportId = params.get("report_id");
+  if (!reportId) return;
+
+  // Wait for DOM + Lucide icons to be ready
+  setTimeout(() => {
+    const row = document.querySelector(`tr[data-id="${reportId}"]`);
+    if (row) {
+      // Try to find the Lucide icon (either <i> or <svg>)
+      const infoIcon =
+        row.querySelector('[data-lucide="file-search"]') ||
+        row.querySelector(".lucide-file-search");
+
+      if (infoIcon) {
+        infoIcon.dispatchEvent(new Event("click", { bubbles: true }));
+      } else {
+        Swal.fire({
+          title: "Icon not found",
+          text: "We couldn’t find the report details icon for this entry.",
+          icon: "warning",
+          confirmButtonText: "OK",
+          customClass: { confirmButton: "poppins-medium" },
+        });
+      }
+    } else {
+      Swal.fire({
+        title: "Report not found",
+        text: "The report you're trying to view doesn't exist or was removed.",
+        icon: "warning",
+        confirmButtonText: "OK",
+        customClass: { confirmButton: "poppins-medium" },
+      });
+    }
+  }, 400); // small delay ensures DOM + Lucide finished rendering
 });

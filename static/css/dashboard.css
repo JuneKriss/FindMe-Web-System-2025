@@ -2,8 +2,16 @@
   --primary: #14213d;
   --secondary: #fca311;
   --subtext: #6b7280;
-  --ongoing: #3399ff;
+
+  /* Status Colors */
   --pending: #ffb84d;
+  --verified: #10b981;
+  --in-progress: #3399ff;
+  --on-hold: #a855f7;
+  --closed-safe: #22c55e;
+  --closed-deceased: #6b7280;
+  --closed-unresolved: #f97316;
+  --rejected: #ef4444;
 }
 
 * {
@@ -35,8 +43,16 @@ section {
 
 .counts {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 2rem;
+  align-items: flex-start;
+}
+
+.counts-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  flex: 1;
 }
 
 .countBox {
@@ -46,29 +62,41 @@ section {
   padding: 15px 3rem 15px 15px;
   border: none;
   border-radius: 5px;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
+  box-shadow:
+    rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
     rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
 }
 
 .countBox svg {
-  width: 2em;
-  height: 2em;
+  width: 2.5em !important;
+  height: 2.5em !important;
   color: var(--secondary);
   stroke-width: 1.5;
 }
 
+.chart-container {
+  flex: 1.5;
+  min-width: 300px;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow:
+    rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
+    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+}
+
 .texts {
-  line-height: 1.2;
+  line-height: 1.8;
 }
 
 .texts span {
-  font-size: 0.75em;
+  font-size: 0.875em;
   color: var(--subtext);
 }
 
 .texts h2 {
   color: var(--primary);
-  font-size: 1.25em;
+  font-size: 1.5em;
 }
 
 .recentReports {
@@ -94,7 +122,8 @@ section {
   border: none;
   border-radius: 5px;
   padding: 20px;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
+  box-shadow:
+    rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
     rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
   display: flex;
   flex-direction: column;
@@ -211,7 +240,9 @@ section {
   height: 1.2em;
   color: var(--primary);
   stroke-width: 1.5;
-  transition: transform 0.3s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.2s ease;
 }
 
 .bottomContainer a:hover {
@@ -235,6 +266,7 @@ section {
   background-color: rgba(0, 0, 0, 0.9);
   align-items: center;
   justify-content: center;
+  flex-direction: column;
 }
 
 .img-modal-content {
@@ -257,6 +289,64 @@ section {
 
 .img-modal .close:hover {
   color: #aaa;
+}
+
+.mediaArrow {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2100;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mediaArrow svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  stroke-width: 2; /* makes icon lines bolder */
+}
+
+.mediaArrow:hover {
+  opacity: 1;
+}
+
+#prevArrow {
+  left: 30px;
+}
+
+#nextArrow {
+  right: 30px;
+}
+
+.mediaDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.mediaDots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #777;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mediaDots .dot.active {
+  background-color: #fff;
+}
+
+.reportCard img:not(:first-child) {
+  display: none;
 }
 
 /* Zoom animation */
@@ -354,4 +444,44 @@ section {
   font-size: 1.125em;
   font-style: italic;
   color: var(--subtext);
+}
+
+.reports-empty {
+  font-size: 1em;
+  color: var(--subtext);
+  font-style: italic;
+}
+
+/* Case status colors */
+
+.status-pending {
+  color: var(--pending);
+}
+
+.status-verified {
+  color: var(--verified);
+}
+
+.status-in-progress {
+  color: var(--in-progress);
+}
+
+.status-on-hold {
+  color: var(--on-hold);
+}
+
+.status-closed-safe {
+  color: var(--closed-safe);
+}
+
+.status-closed-deceased {
+  color: var(--closed-deceased);
+}
+
+.status-closed-unresolved {
+  color: var(--closed-unresolved);
+}
+
+.status-rejected {
+  color: var(--rejected);
 }
