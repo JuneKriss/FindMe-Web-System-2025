@@ -151,11 +151,16 @@ REST_FRAMEWORK = {
     ),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True         # DEV ONLY. Lock down for prod.
+CORS_ALLOW_ALL_ORIGINS = True        
 CORS_ALLOW_CREDENTIALS = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'findme@example.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'findmehelpdesk@gmail.com'
+EMAIL_HOST_PASSWORD = 'skkbypcmkiszwytk'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 SIMPLE_JWT = {
     'USER_ID_FIELD': 'account_id',
