@@ -25,6 +25,7 @@ from rest_framework import status
 from .serializers import AccountSerializer , FamilySerializer, VolunteerSerializer
 from .serializers import ReportSerializer, ReportMediaSerializer
 from .serializers import ReportMessageSerializer, SightingSerializer, SightingMediaSerializer
+from .serializers import UserNotificationSerializer
 
 #MODELS
 from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode, Notification, UserNotification, ReportAssistance, ReportMessage, ReportSighting, SightingMedia
@@ -40,6 +41,21 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Account, EmailVerificationCode
 from .serializers import AccountSerializer
+from django.db.models import Q
+
+# HELPER FUNCTION: Create Notification
+def create_notification(action, title, related_report, recipients):
+    notification = Notification.objects.create(
+        action=action,
+        title=title,
+        related_report=related_report
+    )
+
+    for user in recipients:
+        UserNotification.objects.create(
+            user=user,
+            notification=notification
+        )
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
@@ -218,6 +234,12 @@ class ReportViewSet(viewsets.ModelViewSet):
         report.status = 'In Progress'
         report.save(update_fields=['status'])
 
+        create_notification(
+            action="assistance_started",
+            title=f"Volunteer {user.full_name} assisted on your Case #{report.report_id}",
+            related_report=report,
+            recipients=[report.reporter]
+        )
         return Response({'detail': 'You are now assisting this report.'})
 
     @action(detail=False, methods=['get'])
@@ -253,9 +275,21 @@ class ReportMessageViewSet(viewsets.ModelViewSet):
         if report_id:
             return ReportMessage.objects.filter(report_id=report_id).order_by('created_at')
         return ReportMessage.objects.none()
-    
+
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        message = serializer.save(sender=self.request.user)
+        report = message.report
+
+        # All participants: reporter + volunteers assisting
+        recipients = [report.reporter] + [a.volunteer for a in report.assistances.all()]
+        recipients = [user for user in recipients if user != message.sender]
+
+        create_notification(
+            action="new_message",
+            title=f"New message on {report.full_name}'s case",
+            related_report=report,
+            recipients=recipients,
+        )
 
 class SightingViewSet(viewsets.ModelViewSet):
     serializer_class = SightingSerializer
@@ -268,7 +302,23 @@ class SightingViewSet(viewsets.ModelViewSet):
         return ReportSighting.objects.all().order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(volunteer=self.request.user)
+        # 1) save sighting first, without manually injecting volunteer
+        sighting = serializer.save()
+
+        # 2) safely assign volunteer AFTER save
+        sighting.volunteer = self.request.user
+        sighting.save(update_fields=["volunteer"])
+
+        # 3) now `sighting` is valid → you can safely trigger notification
+        create_notification(
+            action="new_sighting",
+            title=(
+                f"New sighting reported by Volunteer {self.request.user.full_name} "
+                f"on Case #{sighting.report.report_id} you reported"
+            ),
+            related_report=sighting.report,
+            recipients=[sighting.report.reporter]
+        )
 
 class SightingMediaViewSet(viewsets.ModelViewSet):
     serializer_class = SightingMediaSerializer
@@ -282,7 +332,46 @@ class SightingMediaViewSet(viewsets.ModelViewSet):
         file_type = file.content_type if file else None
         serializer.save(file_type=file_type)
 
+class UserNotificationViewSet(viewsets.ModelViewSet):
+    serializer_class = UserNotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        return UserNotification.objects.filter(
+            user=user,             
+            is_deleted=False,     
+        ).order_by('-notification__created_at')
+
+
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        notif = self.get_object()
+        notif.mark_as_read()
+        return Response({'status': 'read'})
+
+    @action(detail=True, methods=['post'])
+    def mark_deleted(self, request, pk=None):
+        notif = self.get_object()
+        notif.mark_as_deleted()
+        return Response({'status': 'deleted'})
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        count = UserNotification.objects.filter(
+            user=request.user,
+            is_read=False,
+            is_deleted=False
+        ).count()
+        return Response({'unread': count})
+
 # API
+
+
+
+
+
 
 
 # Helper Functions

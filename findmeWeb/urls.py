@@ -16,6 +16,7 @@ from django.conf.urls.static import static
 # API
 from core.views import AccountViewSet, FamilyViewSet, VolunteerViewSet
 from core.views import ReportViewSet, ReportMediaViewSet, ReportMessageViewSet, SightingViewSet, SightingMediaViewSet
+from core.views import UserNotificationViewSet
 
 router = DefaultRouter()
 router.register(r'accounts', AccountViewSet, basename='accounts')
@@ -26,6 +27,7 @@ router.register(r'reportMedia', ReportMediaViewSet, basename='reportMedia')
 router.register(r'reportMessages', ReportMessageViewSet, basename='reportMessages')
 router.register(r'sightings', SightingViewSet, basename='sightings')
 router.register(r'sightingMedia', SightingMediaViewSet, basename='sightingMedia')
+router.register('user-notifications', UserNotificationViewSet, basename='user-notifications')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
