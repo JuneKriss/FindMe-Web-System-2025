@@ -169,7 +169,13 @@
                       >
                         {{ case.status }}
                       </td>
-                      <td class="poppins-regular">{{ case.created_at|date:"F j, Y" }}</td>
+                      <td class="poppins-regular">
+                        {% if case.latest_sighting %}
+                          {{ case.latest_sighting|date:"F j, Y" }}
+                        {% else %}
+                          {{ case.created_at|date:"F j, Y" }}
+                        {% endif %}
+                      </td>
                       <td>
                         <div class="actionIcon">
                           <i data-lucide="pen"></i>

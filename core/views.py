@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 import datetime
 from datetime import timedelta, datetime
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -494,6 +494,7 @@ def signup_view(request):
             username=username,
             email=email,
             password=make_password(password),  # hash password
+            role="police",
             is_active=False
         )
 
@@ -654,6 +655,7 @@ def dashboard(request):
     recent_cases = (
         ReportCase.objects.select_related("reporter")
         .exclude(status__in=["Pending", "Rejected"])
+        .annotate(latest_sighting=Max("sightings__created_at"))  # <-- NEW
         .order_by("-report_id")[:5]
     )
 
