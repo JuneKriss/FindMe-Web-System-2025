@@ -369,12 +369,6 @@ class UserNotificationViewSet(viewsets.ModelViewSet):
 
 # API
 
-
-
-
-
-
-
 # Helper Functions
 def create_notification(action, title, related_report=None, recipients=None):
     """
@@ -478,6 +472,9 @@ def login(request):
 def signup(request):
     return render(request, 'signup.html')
 
+FROM_EMAIL = 'FindMe Support <findmehelpdesk@gmail.com>'
+
+
 def signup_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -501,15 +498,15 @@ def signup_view(request):
         )
 
         # Generate OTP
-        otp_code = str(random.randint(100000, 999999))  # 6-digit code
+        otp_code = str(random.randint(100000, 999999))
         EmailVerificationCode.objects.create(user=user, code=otp_code)
 
         # Send email
         send_mail(
-            "Verify your FindMe account",
-            f"Your verification code is {otp_code}. It expires in 5 minutes.",
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
+            subject="Verify your FindMe account",
+            message=f"Your verification code is {otp_code}. It expires in 5 minutes.",
+            from_email=FROM_EMAIL,
+            recipient_list=[email],
             fail_silently=False,
         )
 
@@ -527,16 +524,14 @@ def verify_code_view(request, user_id):
 
     # Handle resend link click
     if request.GET.get("resend") == "true":
-        # Generate new OTP
         otp_code = str(random.randint(100000, 999999))
         EmailVerificationCode.objects.create(user=user, code=otp_code)
 
-        # Send email
         send_mail(
-            "Verify your FindMe account",
-            f"Your new verification code is {otp_code}. It expires in 5 minutes.",
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
+            subject="Verify your FindMe account",
+            message=f"Your new verification code is {otp_code}. It expires in 5 minutes.",
+            from_email=FROM_EMAIL,
+            recipient_list=[user.email],
             fail_silently=False,
         )
 
@@ -580,28 +575,25 @@ def resend_code_view(request, user_id):
         messages.error(request, "Invalid user.")
         return redirect("signup")
 
-    # Prevent spamming by checking if a code was recently sent
+    # Prevent spamming — allow new code only after 1 minute
     recent_code = EmailVerificationCode.objects.filter(user=user).order_by('-created_at').first()
     if recent_code and recent_code.created_at > timezone.now() - timedelta(minutes=1):
         messages.info(request, "You can request a new code in a minute.")
         return redirect("verify-otp", user_id=user_id)
 
-    # Generate and save new code
     otp_code = str(random.randint(100000, 999999))
     EmailVerificationCode.objects.create(user=user, code=otp_code)
 
-    # Send email
     send_mail(
-        "Verify your FindMe account",
-        f"Here’s your new verification code: {otp_code}. It expires in 5 minutes.",
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
+        subject="Verify your FindMe account",
+        message=f"Here’s your new verification code: {otp_code}. It expires in 5 minutes.",
+        from_email=FROM_EMAIL,
+        recipient_list=[user.email],
         fail_silently=False,
     )
 
     messages.info(request, "We’ve sent you a new verification code. Check your inbox!")
     return redirect("verify-otp", user_id=user_id)
-
 
 def login_view(request):
     if request.method == "POST":
