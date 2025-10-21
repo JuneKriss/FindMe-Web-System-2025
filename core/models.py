@@ -186,7 +186,9 @@ class ReportSighting(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         limit_choices_to={'role': 'volunteer'},
-        related_name='volunteer_sightings'
+        related_name='volunteer_sightings',
+        null=True,  # ✅ ADD THIS
+        blank=True,  # ✅ optional but good for admin
     )
     description = models.TextField()
     location = models.CharField(max_length=255)

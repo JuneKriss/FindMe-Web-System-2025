@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import make_password
 from .models import Account, Family, Volunteer
 from .models import ReportCase, ReportMedia, ReportAssistance, ReportMessage
 from .models import ReportSighting, SightingMedia
+from .models import Notification, UserNotification
 
 class FamilySerializer(serializers.ModelSerializer):
     class Meta:
@@ -116,8 +117,30 @@ class SightingSerializer(serializers.ModelSerializer):
         model = ReportSighting
         fields = "__all__"
         read_only_fields = ["sighting_id", "volunteer", "created_at", "media"]
+    
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'action', 'title', 'related_report', 'created_at']
 
-    def create(self, validated_data):
-        user = self.context["request"].user
-        validated_data["volunteer"] = user
-        return super().create(validated_data)
+
+class UserNotificationSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(source='notification.title', read_only=True)
+    action = serializers.CharField(source='notification.action', read_only=True)
+    related_report = serializers.IntegerField(
+        source='notification.related_report.id', read_only=True
+    )
+    created_at = serializers.DateTimeField(source='notification.created_at', read_only=True)
+
+    class Meta:
+        model = UserNotification
+        fields = [
+            'id',
+            'title',
+            'action',
+            'related_report',
+            'created_at',
+            'is_read',
+            'read_at',
+            'is_deleted', 
+        ]
