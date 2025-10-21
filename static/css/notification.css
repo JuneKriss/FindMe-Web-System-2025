@@ -247,3 +247,36 @@ section {
     opacity 0.3s ease,
     transform 0.3s ease;
 }
+
+/* SweetAlert theme customization */
+.swal-title {
+  color: var(--primary) !important;
+}
+
+.swal-text {
+  color: var(--subtext) !important;
+}
+
+.swal-confirm {
+  background-color: var(--secondary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  transition: 0.3s ease;
+}
+
+.swal-confirm:hover {
+  background-color: #e09500 !important; /* darker shade of secondary */
+}
+
+.swal-cancel {
+  background-color: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  transition: 0.3s ease;
+}
+
+.swal-cancel:hover {
+  background-color: #0e1a33 !important; /* darker primary */
+}

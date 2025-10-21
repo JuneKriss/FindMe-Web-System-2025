@@ -122,7 +122,8 @@ class ReportMedia(models.Model):
 class Notification(models.Model):
     ACTION_CHOICES = [
         ("report_created", "Report Created"),
-        ("report_updated", "Report Updated"),
+        ("report_info_updated", "Report Information Updated"), 
+        ("report_updated", "Report Updated (Sightings)"),
         ("status_changed", "Status Changed"),
         ("new_message", "New Message"),
     ]
@@ -190,6 +191,7 @@ class ReportSighting(models.Model):
     description = models.TextField()
     location = models.CharField(max_length=255)
     date_seen = models.DateField()
+    time_seen = models.TimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

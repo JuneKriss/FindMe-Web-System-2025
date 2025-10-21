@@ -257,7 +257,15 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 1.5rem;
-  overflow-y: scroll;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.modalContainer .right form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .two-column {
@@ -301,7 +309,7 @@
   color: var(--subtext);
 }
 
-.modalSection form button {
+.detail button {
   display: flex;
   align-self: center;
   align-content: center;
@@ -318,8 +326,56 @@
   transition: all 0.1s ease;
 }
 
-.modalSection form button:hover {
+.detail button:hover {
   background-color: #fff;
   color: var(--primary);
   border: 1px solid var(--primary);
+}
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.flex-row .detail {
+  flex: 1;
+}
+
+/* --- Navigation Buttons --- */
+.modal-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 50px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: all 0.2s ease-in-out;
+  color: #333;
+}
+
+.modal-nav-btn:hover {
+  background: #f3f3f3;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.modal-nav-btn.left {
+  left: 30px;
+}
+
+.modal-nav-btn.right {
+  right: 30px;
+}
+
+.modal-nav-btn i {
+  width: 18px;
+  height: 18px;
 }

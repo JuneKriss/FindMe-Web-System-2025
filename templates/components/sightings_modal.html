@@ -1,0 +1,80 @@
+<div id="sightingsModal" class="sightings-modal">
+  <div class="sightings-modal-content">
+    <span class="close">&times;</span>
+    <h3 class="poppins-medium modal-title">Sightings for Case ID - 4</h3>
+
+    <div class="sightings-body">
+      <p class="poppins-regular subtext">
+        All reported sightings for this case will be displayed here.
+      </p>
+
+      <!-- Example skeleton list -->
+      <div class="sighting-item poppins-regular">
+        <div class="sighting-header">
+          <div class="info-group">
+            <i data-lucide="calendar-clock"></i>
+            <span class="sighting-date poppins-regular">October 19, 2025, 12:45 pm</span>
+          </div>
+          <div class="info-group">
+            <i data-lucide="map-pinned"></i>
+            <span class="poppins-regular">location text</span>
+          </div>
+          <div class="info-group">
+            <i data-lucide="user"></i>
+            <span class="poppins-regular">volunteer name</span>
+          </div>
+        </div>
+        <p class="sighting-description poppins-regular">
+          Witness reported seeing someone matching the description near the market area.
+        </p>
+        <button class="see-more">
+          <span class="poppins-regular">See Photos</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+      <div class="sighting-item poppins-regular">
+        <div class="sighting-header">
+          <div class="info-group">
+            <i data-lucide="calendar-clock"></i>
+            <span class="sighting-date">October 19, 2025, 12:45 pm</span>
+          </div>
+          <div class="info-group">
+            <i data-lucide="map-pinned"></i>
+            <span>location text</span>
+          </div>
+          <div class="info-group">
+            <i data-lucide="user"></i>
+            <span>jk</span>
+          </div>
+        </div>
+        <p class="sighting-description">
+          Witness reported seeing someone matching the description near the market area.
+        </p>
+        <button class="see-more">
+          <span class="poppins-regular">See Photos</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="imgModal" class="img-modal">
+  <span class="close" onclick="closeImageModal()">&times;</span>
+
+  <!-- Left Arrow -->
+  <button class="mediaArrow-modal" id="prevArrow" onclick="changeImage(-1)">
+    <i data-lucide="chevron-left"></i>
+  </button>
+
+  <!-- Image container -->
+  <img class="img-modal-content" id="modalImg" />
+
+  <!-- Right Arrow -->
+  <button class="mediaArrow-modal" id="nextArrow" onclick="changeImage(1)">
+    <i data-lucide="chevron-right"></i>
+  </button>
+
+  <!-- Dots -->
+  <div class="mediaDots" id="mediaDots"></div>
+</div>

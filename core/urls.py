@@ -9,10 +9,14 @@ urlpatterns = [
     path('reports/', views.reports, name='reports'),
     path("reports/submit/", views.submit_report, name="submit_report"),
     path("reports/search/", views.search_reports, name="search_reports"),
-    path("reports/update-status/", views.update_report_status, name="update_report_status"),
+    path("update_report/", views.update_report, name="update_report"),
+    path("reports/<int:report_id>/messages/", views.get_report_messages, name="get_report_messages"),
+    path("reports/<int:report_id>/messages/send/", views.send_report_message, name="send_report_message"),
     
     path('cases/', views.cases, name='cases'),
     path("cases/search/", views.search_cases, name="search_cases"),
+    path("submit_sighting/", views.submit_sighting, name="submit_sighting"),
+    path("cases/<int:report_id>/sightings/", views.get_sightings, name="get_sightings"),
 
     path("cases/closed/", views.closed_cases, name="closed_cases"),
     path("cases/closed/search/", views.search_closed_cases, name="search_closed_cases"),
@@ -22,6 +26,7 @@ urlpatterns = [
     path("notifications/mark-read/<int:notif_id>/", views.mark_notification_read, name="mark_notification_read"),
     path("notifications/delete/<int:notif_id>/", views.delete_notification, name="delete_notification"),
     path("notifications/count/", views.get_unread_count, name="get_unread_count"),
+    path("notifications/mark-all-read/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
 
     path("login/", views.login_view, name="login"),
     path('signup/', views.signup_view, name='signup'),

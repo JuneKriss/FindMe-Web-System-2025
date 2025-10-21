@@ -1,0 +1,92 @@
+{% load static %}
+
+<div id="addSightingsModal" class="side-modal">
+  <div class="side-modal-content">
+    <span class="close">&times;</span>
+    <div class="side-modal-head">
+      <div class="outer-circle">
+        <div class="inner-circle">
+          <div class="icon">
+            <i data-lucide="eye"></i>
+          </div>
+        </div>
+      </div>
+      <div class="textContent">
+        <h2 class="poppins-medium">Report a Sighting</h2>
+        <p class="poppins-regular">Share details about where and when you last saw this person.</p>
+      </div>
+    </div>
+
+    <form
+      id="addSightingsForm"
+      method="post"
+      action="{% url 'submit_sighting' %}"
+      enctype="multipart/form-data"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="report_id" />
+      <div class="side-modalSection">
+        <h3 class="poppins-medium">Sightings Information</h3>
+        <div class="detail">
+          <label for="location" class="poppins-regular">Location</label>
+          <input type="text" id="location" name="location" class="poppins-regular" required />
+        </div>
+
+        <div class="two-column">
+          <div class="detail">
+            <label for="date_seen" class="poppins-regular">Date</label>
+            <input type="date" id="date_seen" name="date_seen" class="poppins-regular" required />
+          </div>
+          <div class="detail">
+            <label for="time_seen" class="poppins-regular">Time</label>
+            <input type="time" id="time_seen" name="time_seen" class="poppins-regular" required />
+          </div>
+        </div>
+
+        <div class="detail">
+          <label for="description" class="poppins-regular">Details</label>
+          <textarea
+            id="description"
+            name="description"
+            rows="6"
+            class="poppins-regular"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="side-modalSection">
+        <h3 class="poppins-medium">Media</h3>
+        <div class="detail">
+          <label for="images" class="poppins-regular">Image</label>
+          <div class="upload-box">
+            <label for="images" class="upload-label">
+              <div class="upload-content" id="uploadContent">
+                <i data-lucide="images"></i>
+                <p class="poppins-regular">
+                  Click to
+                  <span class="browse poppins-medium">Browse</span> and upload images
+                </p>
+                <small class="poppins-regular">PNG, JPG</small>
+              </div>
+            </label>
+            <input
+              type="file"
+              id="images"
+              name="images"
+              accept="image/*"
+              multiple
+              required
+              hidden
+            />
+          </div>
+        </div>
+      </div>
+      <div class="side-modalSection">
+        <div class="two-column">
+          <button type="submit" class="poppins-regular">Submit Sighting</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

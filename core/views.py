@@ -9,11 +9,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.http import JsonResponse
 import datetime
-from datetime import timedelta
-from django.http import JsonResponse
+from datetime import timedelta, datetime
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+import json
+import mimetypes
 
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
@@ -287,7 +288,14 @@ class SightingMediaViewSet(viewsets.ModelViewSet):
 
 # Helper Functions
 def create_notification(action, title, related_report=None, recipients=None):
-    # Check for very recent duplicates (within 5 minutes)
+    """
+    Create a notification and automatically notify:
+    - Reporter of the report
+    - All active volunteers assisting the report
+    - All police users
+    """
+
+    # Prevent very recent duplicates (within 5 minutes)
     recent_cutoff = timezone.now() - timedelta(minutes=5)
     existing = Notification.objects.filter(
         related_report=related_report,
@@ -297,9 +305,9 @@ def create_notification(action, title, related_report=None, recipients=None):
     ).first()
 
     if existing:
-        return  # skip very recent duplicates only
+        return  # Skip duplicate notification
 
-    # Create main notification
+    # Create main notification record
     notification = Notification.objects.create(
         action=action,
         title=title,
@@ -307,16 +315,30 @@ def create_notification(action, title, related_report=None, recipients=None):
         created_at=timezone.now(),
     )
 
-    # Default recipients: all police + reporter if applicable
+    # Automatically gather all relevant recipients if not provided
     if recipients is None:
-        recipients = list(Account.objects.filter(role="police"))
-        if related_report and related_report.reporter not in recipients:
-            recipients.append(related_report.reporter)
+        recipients = set()
 
-    # Create UserNotification entries efficiently
+        # Include the report's reporter
+        if related_report and related_report.reporter:
+            recipients.add(related_report.reporter)
+
+        # Include all active volunteers assisting the report
+        if related_report:
+            active_volunteers = Account.objects.filter(
+                volunteer_assistances__report=related_report,
+                volunteer_assistances__status="active"
+            )
+            recipients.update(active_volunteers)
+
+        # Include all police accounts
+        police_accounts = Account.objects.filter(role="police")
+        recipients.update(police_accounts)
+
+    # Create UserNotification entries (avoid duplicates)
     UserNotification.objects.bulk_create([
         UserNotification(user=user, notification=notification)
-        for user in recipients
+        for user in recipients if user is not None
     ])
 
 def unread_notifications_count(request):
@@ -337,6 +359,28 @@ def get_unread_count(request):
         count = UserNotification.objects.filter(user_id=user_id, is_read=False, is_deleted=False).count()
         return JsonResponse({'count': count})
     return JsonResponse({'count': 0})
+
+def normalize_date(value):
+    """Ensure consistent date comparison format"""
+    if not value:
+        return None
+    if isinstance(value, str):
+        try:
+            return datetime.strptime(value, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+    return value
+
+def normalize_time(value):
+    """Ensure consistent time comparison format"""
+    if not value:
+        return None
+    if isinstance(value, str):
+        try:
+            return datetime.strptime(value, "%H:%M").time()
+        except ValueError:
+            return None
+    return value
 # Helper Functions
 
 def login(request):
@@ -384,8 +428,6 @@ def signup_view(request):
         return redirect("verify-otp", user_id=user.account_id)
 
     return render(request, "signup.html")
-
-
 
 def verify_code_view(request, user_id):
     try:
@@ -507,7 +549,7 @@ def logout_view(request):
     request.session.flush()  # clears all session data (user_id, username, etc.)
     return redirect("login")
 
-
+#DASHBOARD
 def dashboard(request):
     user_id = request.session.get('user_id')
 
@@ -579,6 +621,7 @@ def dashboard(request):
 
     return render(request, "dashboard.html", context)
 
+#REPORTS
 def reports(request):
     user_id = request.session.get('user_id')
 
@@ -769,52 +812,121 @@ def search_reports(request):
 
     return JsonResponse({"results": results})
 
-def update_report_status(request):
-    if request.method == "POST":
-        report_id = request.POST.get("report_id")
-        status = request.POST.get("status")
+def update_report(request):
+    if request.method != "POST":
+        return redirect("reports")
 
-        # Detect referring page
-        referer = request.META.get("HTTP_REFERER", "")
-        redirect_target = "reports"  # default
+    user_id = request.session.get("user_id")
+    if not user_id:
+        messages.error(request, "You must be logged in to update a report.")
+        return redirect("login")
 
-        if "cases/closed" in referer:  # match actual path
-            redirect_target = "closed_cases"
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("login")
 
-        if not report_id:
-            messages.error(request, "Report ID is missing.")
-            return redirect(redirect_target)
+    # --- Collect form data ---
+    report_id = request.POST.get("report_id")
+    status = request.POST.get("status")
+    full_name = request.POST.get("fullName")
+    age = request.POST.get("age")
+    gender = request.POST.get("gender")
+    last_seen_date = request.POST.get("last_seen_date")
+    last_seen_time = request.POST.get("last_seen_time")
+    last_seen_location = request.POST.get("last_seen_location")
+    clothing = request.POST.get("clothing")
+    notes = request.POST.get("description")
 
-        try:
-            report = ReportCase.objects.get(report_id=report_id)
-        except ReportCase.DoesNotExist:
-            messages.error(request, "Report not found.")
-            return redirect(redirect_target)
+    # --- Determine where to redirect after update ---
+    referer = request.META.get("HTTP_REFERER", "")
+    if "cases/closed" in referer:
+        redirect_target = "closed_cases"
+    elif "cases" in referer:
+        redirect_target = "cases"
+    else:
+        redirect_target = "reports"
 
-        if not status:
-            messages.error(request, "Please select a status.")
-            return redirect(redirect_target)
-
-        valid_statuses = [choice[0] for choice in ReportCase.STATUS_CHOICES]
-        if status not in valid_statuses:
-            messages.error(request, "Invalid status.")
-            return redirect(redirect_target)
-
-        # Update report
-        report.status = status
-        report.save()
-
-        create_notification(
-            action="status_changed",
-            title=f"The status of report #{report.report_id} has been changed to {status}.",
-            related_report=report,
-        )
-
-        messages.success(request, "Report status updated successfully.")
+    if not report_id:
+        messages.error(request, "Report ID is missing.")
         return redirect(redirect_target)
 
-    return redirect("reports")
+    try:
+        report = ReportCase.objects.get(report_id=report_id)
+    except ReportCase.DoesNotExist:
+        messages.error(request, "Report not found.")
+        return redirect(redirect_target)
 
+    # --- Validate status ---
+    valid_statuses = [choice[0] for choice in ReportCase.STATUS_CHOICES]
+    if status and status not in valid_statuses:
+        messages.error(request, "Invalid status selected.")
+        return redirect(redirect_target)
+
+    # --- Permissions ---
+    can_edit_all = (user.role == "police") or (report.reporter == user)
+
+    info_updated = False
+    status_updated = False
+
+    try:
+        # --- Handle editable fields ---
+        if can_edit_all:
+            updates = {
+                "full_name": full_name.strip() if full_name else None,
+                "age": int(age) if age else None,
+                "gender": gender,
+                "last_seen_date": normalize_date(last_seen_date),
+                "last_seen_time": normalize_time(last_seen_time),
+                "last_seen_location": last_seen_location.strip() if last_seen_location else None,
+                "clothing": clothing.strip() if clothing else None,
+                "notes": notes.strip() if notes else None,
+            }
+
+            for field, new_value in updates.items():
+                if new_value is not None:
+                    current_value = getattr(report, field)
+
+                    # Handle time comparison safely
+                    if field == "last_seen_time" and current_value:
+                        current_value = current_value.replace(second=0, microsecond=0)
+
+                    if new_value != current_value:
+                        setattr(report, field, new_value)
+                        info_updated = True
+
+        # --- Handle status change ---
+        if status and status != report.status:
+            report.status = status
+            status_updated = True
+
+        # --- If no real changes were made ---
+        if not info_updated and not status_updated:
+            messages.info(request, "No changes detected.")
+            return redirect(redirect_target)
+
+        report.save()
+
+        if info_updated and status_updated:
+            action_type = "report_info_updated"
+            title = f"Report #{report.report_id} details and status have been updated."
+        elif info_updated:
+            action_type = "report_info_updated"
+            title = f"Report #{report.report_id} information has been updated."
+        else:  # only status updated
+            action_type = "status_changed"
+            title = f"The status of report #{report.report_id} has been changed to {status}."
+
+        create_notification(action=action_type, title=title, related_report=report)
+        messages.success(request, "Report updated successfully.")
+        return redirect(redirect_target)
+
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return redirect(redirect_target)
+
+#CASES
 def cases(request):
     user_id = request.session.get('user_id')
 
@@ -850,6 +962,7 @@ def cases(request):
             "username": user.username,
             "page_obj": page_obj,
             "paginator": paginator,
+            "status_choices": ReportCase.STATUS_CHOICES, 
         },
     )
 
@@ -928,6 +1041,108 @@ def search_cases(request):
         })
 
     return JsonResponse({"results": results})
+
+def submit_sighting(request):
+    user_id = request.session.get("user_id")
+
+    if not user_id:
+        return JsonResponse({
+            "status": "error",
+            "message": "Please log in to submit a sighting."
+        }, status=401)
+
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        return JsonResponse({
+            "status": "error",
+            "message": "User not found. Please log in again."
+        }, status=404)
+
+    if request.method == "POST":
+        report_id = request.POST.get("report_id")
+        location = request.POST.get("location")
+        date_seen = request.POST.get("date_seen")
+        time_seen = request.POST.get("time_seen")  
+        description = request.POST.get("description")
+
+        # Validate all required fields
+        if not all([report_id, location, date_seen, description]):
+            return JsonResponse({
+                "status": "error",
+                "message": "Please fill in all required fields."
+            }, status=400)
+
+        report = get_object_or_404(ReportCase, report_id=report_id)
+
+        # Create the sighting record
+        sighting = ReportSighting.objects.create(
+            report=report,
+            volunteer=user,
+            description=description,
+            location=location,
+            date_seen=date_seen,
+            time_seen=time_seen if time_seen else None,
+            created_at=timezone.now(),
+        )
+
+        # Handle multiple media uploads
+        for file in request.FILES.getlist("images"):
+            file_type, _ = mimetypes.guess_type(file.name)
+            SightingMedia.objects.create(
+                sighting=sighting,
+                file=file,
+                file_type=file_type or "unknown",
+            )
+
+        # Create a notification entry
+        create_notification(
+            action="report_updated",
+            title=f"New sighting reported for report #{report.report_id} by {user.full_name or user.username}.",
+            related_report=report,
+        )
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Sighting submitted successfully!"
+        })
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method."
+    }, status=405)
+
+def get_sightings(request, report_id):
+    report = get_object_or_404(ReportCase, pk=report_id)
+    sightings = (
+        ReportSighting.objects
+        .filter(report=report)
+        .select_related("volunteer")
+        .prefetch_related("media")
+        .order_by("-created_at")
+    )
+
+    data = []
+    for sighting in sightings:
+        media_list = [
+            {
+                "url": m.file.url,
+                "type": m.file_type
+            }
+            for m in sighting.media.all()
+        ]
+        data.append({
+            "id": sighting.sighting_id,
+            "volunteer": sighting.volunteer.full_name or sighting.volunteer.username,
+            "description": sighting.description,
+            "location": sighting.location,
+            "date_seen": sighting.date_seen.strftime("%B %d, %Y"),
+            "time_seen": sighting.time_seen.strftime("%I:%M %p") if sighting.time_seen else "",
+            "media": media_list,
+            "created_at": sighting.created_at.strftime("%B %d, %Y, %I:%M %p"),
+        })
+
+    return JsonResponse({"sightings": data})
 
 def closed_cases(request):
     user_id = request.session.get("user_id")
@@ -1024,7 +1239,7 @@ def delete_report(request):
     report.delete()
     return JsonResponse({"success": True, "message": "Report deleted successfully!"})
 
-
+#NOTIFICATION
 def notifications(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -1119,3 +1334,118 @@ def delete_notification(request, notif_id):
             return JsonResponse({"success": False, "message": "Notification not found"}, status=404)
 
     return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
+
+@csrf_exempt
+def mark_all_notifications_read(request):
+    if request.method == "POST":
+        user_id = request.session.get("user_id")
+
+        if not user_id:
+            return JsonResponse({"success": False, "message": "You must be logged in to perform this action."}, status=401)
+
+        # Get all unread notifications for this user
+        unread_notifications = UserNotification.objects.filter(user_id=user_id, is_read=False)
+
+        if not unread_notifications.exists():
+            return JsonResponse({"success": False, "message": "All notifications are already marked as read."})
+
+        # Mark all as read in bulk
+        unread_notifications.update(is_read=True, read_at=timezone.now())
+
+        return JsonResponse({"success": True, "message": "All notifications marked as read."})
+
+    return JsonResponse({"success": False, "message": "Invalid request method."}, status=400)
+
+#MESSAGE
+@csrf_exempt
+def get_report_messages(request, report_id):
+    """Fetch messages for a report (authorized users only)."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return JsonResponse({"error": "User not logged in"}, status=403)
+
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+
+    report = get_object_or_404(ReportCase, pk=report_id)
+
+    # Authorization check
+    is_allowed = (
+        report.reporter == user
+        or ReportAssistance.objects.filter(report=report, volunteer=user).exists()
+        or user.role == "police"
+    )
+    if not is_allowed:
+        return JsonResponse({"error": "Access denied"}, status=403)
+
+    messages = (
+        report.messages.select_related("sender")
+        .order_by("created_at")
+        .values("sender__full_name", "sender__username", "sender_id", "text", "created_at")
+    )
+
+    data = []
+    for m in messages:
+        sender_name = m["sender__full_name"] or m["sender__username"]
+        data.append({
+            "sender": sender_name,
+            "text": m["text"],
+            "timestamp": m["created_at"].strftime("%b %d, %Y %I:%M %p"),
+            "is_self": m["sender_id"] == user.account_id,
+        })
+
+    return JsonResponse({"messages": data})
+
+
+@csrf_exempt
+def send_report_message(request, report_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return JsonResponse({"error": "User not logged in"}, status=403)
+
+    try:
+        user = Account.objects.get(account_id=user_id)
+    except Account.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+
+    report = get_object_or_404(ReportCase, pk=report_id)
+
+    # Authorization check
+    is_allowed = (
+        report.reporter == user
+        or ReportAssistance.objects.filter(report=report, volunteer=user).exists()
+        or user.role == "police"
+    )
+    if not is_allowed:
+        return JsonResponse({"error": "Access denied"}, status=403)
+
+    # Parse JSON
+    try:
+        data = json.loads(request.body)
+        text = data.get("text", "").strip()
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if not text:
+        return JsonResponse({"error": "Message cannot be empty"}, status=400)
+
+    # Save message
+    message = ReportMessage.objects.create(report=report, sender=user, text=text)
+
+    create_notification(
+        action="new_message",
+        title=f"New message from {user.full_name or user.username} in report ID: {report.report_id}",
+        related_report=report
+    )
+
+    return JsonResponse({
+        "sender": user.full_name or user.username,
+        "text": message.text,
+        "timestamp": message.created_at.strftime("%b %d, %Y %I:%M %p"),
+        "is_self": True,
+    })

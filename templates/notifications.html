@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <title>Notifications</title>
   </head>
@@ -28,19 +29,10 @@
           <p class="poppins-regular">
             You have <span class="notif_count">4</span> notifications to go through
           </p>
-          <div class="dropdown">
-            <button class="button" id="filterBtn">
-              <i data-lucide="list-filter"></i>
-              <span class="poppins-regular">Filter</span>
-            </button>
-            <div class="dropdown-menu">
-              <ul class="poppins-regular">
-                <li>Pending</li>
-                <li>Filter 2</li>
-                <li>Filter 3</li>
-              </ul>
-            </div>
-          </div>
+          <button class="button" id="filterBtn">
+            <i data-lucide="check"></i>
+            <span class="poppins-regular">Mark all as read</span>
+          </button>
         </div>
         <section>
           {# ---------------------- TODAY ---------------------- #}
@@ -218,90 +210,6 @@
             </div>
           {% endif %}
         </section>
-        <!-- <section>
-          <div class="notification-group">
-            <h2 class="poppins-medium">Today</h2>
-            <div class="notification-container">
-              {% for i in "12"|make_list %}
-          <div class="notification">
-            <div class="left">
-              <div class="icon"><i data-lucide="message-circle"></i></div>
-              <div class="texts">
-                <div class="top">
-                  <h3 class="poppins-medium">New Message</h3>
-                  <span class="poppins-regular">4 hours ago</span>
-                </div>
-                <div class="bottom">
-                  <p class="poppins-regular">John Doe sent you a message</p>
-                </div>
-              </div>
-            </div>
-            <div class="right">
-              <i data-lucide="trash"></i>
-            </div>
-          </div>
-          <div class="notification">
-            <div class="left">
-              <div class="icon"><i data-lucide="file"></i></div>
-              <div class="texts">
-                <div class="top">
-                  <h3 class="poppins-medium">New Report</h3>
-                  <span class="poppins-regular">30 minutes ago</span>
-                </div>
-                <div class="bottom">
-                  <p class="poppins-regular">New Report has been posted</p>
-                </div>
-              </div>
-            </div>
-            <div class="right">
-              <i data-lucide="trash"></i>
-            </div>
-          </div>
-        {% endfor %}
-            </div>
-          </div>
-          <div class="notification-group">
-            <h2 class="poppins-medium">Yesterday</h2>
-            <div class="notification-container">
-              {% for i in "12"|make_list %}
-          <div class="notification">
-            <div class="left">
-              <div class="icon"><i data-lucide="message-circle"></i></div>
-              <div class="texts">
-                <div class="top">
-                  <h3 class="poppins-medium">New Message</h3>
-                  <span class="poppins-regular">Yesterday</span>
-                </div>
-                <div class="bottom">
-                  <p class="poppins-regular">John Doe sent you a message</p>
-                </div>
-              </div>
-            </div>
-            <div class="right">
-              <i data-lucide="trash"></i>
-            </div>
-          </div>
-          <div class="notification">
-            <div class="left">
-              <div class="icon"><i data-lucide="file"></i></div>
-              <div class="texts">
-                <div class="top">
-                  <h3 class="poppins-medium">New Report</h3>
-                  <span class="poppins-regular">4 Jun</span>
-                </div>
-                <div class="bottom">
-                  <p class="poppins-regular">New Report has been posted</p>
-                </div>
-              </div>
-            </div>
-            <div class="right">
-              <i data-lucide="trash"></i>
-            </div>
-          </div>
-        {% endfor %}
-            </div>
-          </div>
-        </section> -->
       </div>
     </div>
 
@@ -369,6 +277,85 @@
           }
         }
         return cookieValue;
+      }
+
+      const markAllBtn = document.getElementById("filterBtn");
+
+      if (markAllBtn) {
+        markAllBtn.addEventListener("click", () => {
+          Swal.fire({
+            title: "Mark all as read?",
+            text: "This will mark all unread notifications as read.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Yes, mark all",
+            cancelButtonText: "Cancel",
+            customClass: {
+              title: "poppins-regular swal-title",
+              htmlContainer: "poppins-regular swal-text",
+              confirmButton: "poppins-medium swal-confirm",
+              cancelButton: "poppins-medium swal-cancel",
+            },
+          }).then((result) => {
+            if (result.isConfirmed) {
+              fetch("/notifications/mark-all-read/", {
+                method: "POST",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                },
+              })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    Swal.fire({
+                      position: "top-end",
+                      icon: "success",
+                      title: data.message || "All notifications marked as read.",
+                      showConfirmButton: false,
+                      timer: 1500,
+                      customClass: {
+                        popup: "my-swal-popup",
+                        title: "poppins-medium my-swal-title",
+                        icon: "my-swal-icon",
+                      },
+                    }).then(() => {
+                      document.querySelectorAll(".notification").forEach((notif) => {
+                        notif.classList.add("read");
+                        const checkIcon = notif.querySelector(".mark-read");
+                        if (checkIcon) checkIcon.remove();
+                      });
+                    });
+                  } else {
+                    Swal.fire({
+                      title: "No unread notifications",
+                      text: data.message || "You’re already up to date!",
+                      icon: "info",
+                      confirmButtonText: "OK",
+                      customClass: {
+                        title: "poppins-regular swal-title",
+                        htmlContainer: "poppins-regular swal-text",
+                        confirmButton: "poppins-medium swal-confirm",
+                      },
+                    });
+                  }
+                })
+                .catch((err) => {
+                  Swal.fire({
+                    title: "Error",
+                    text: "Something went wrong. Please try again later.",
+                    icon: "error",
+                    confirmButtonText: "OK",
+                    customClass: {
+                      title: "poppins-regular swal-title",
+                      htmlContainer: "poppins-regular swal-text",
+                      confirmButton: "poppins-medium swal-confirm",
+                    },
+                  });
+                  console.error(err);
+                });
+            }
+          });
+        });
       }
     </script>
 

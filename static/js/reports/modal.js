@@ -3,6 +3,8 @@ lucide.createIcons();
 const setupModal = (triggerSelector, modalId) => {
   const triggers = document.querySelectorAll(triggerSelector);
   const modal = document.getElementById(modalId);
+  const path = window.location.pathname; // get current path
+  const label = path.startsWith("/cases/") || path === "/cases/" ? "Case" : "Report";
   if (!modal) return;
 
   const closeBtn = modal.querySelector(".close");
@@ -27,7 +29,7 @@ const setupModal = (triggerSelector, modalId) => {
           const rawDate = row.dataset.last_seen_date || "";
 
           modal.querySelector("#report_id").innerHTML =
-            `<h3 class="poppins-medium" id="report_id">Report #${row.dataset.id}</h3>`;
+            `<h3 class="poppins-medium" id="report_id">${label} #${row.dataset.id}</h3>`;
           modal.querySelector("#fullName").value = row.dataset.name || "";
           modal.querySelector("#age").value = row.dataset.age || "";
           modal.querySelector("#gender").value = row.dataset.gender || "";
@@ -36,7 +38,11 @@ const setupModal = (triggerSelector, modalId) => {
           if (rawDate) {
             const dateObj = new Date(rawDate);
             if (!isNaN(dateObj)) {
-              const formattedDate = dateObj.toISOString().split("T")[0]; // "YYYY-MM-DD"
+              // Get local YYYY-MM-DD instead of UTC
+              const year = dateObj.getFullYear();
+              const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+              const day = String(dateObj.getDate()).padStart(2, "0");
+              const formattedDate = `${year}-${month}-${day}`;
               modal.querySelector("#last_seen_date").value = formattedDate;
             }
           }
@@ -52,11 +58,9 @@ const setupModal = (triggerSelector, modalId) => {
           }
 
           const statusBadge = modal.querySelector(".status-badge");
-          const statusText = row.children[4].textContent.trim();
+          const statusText = row.dataset.status || "Unknown";
           statusBadge.className = `poppins-regular status-badge ${slugify(statusText)}`;
-          statusBadge.innerHTML = `<span class="status-dot ${slugify(
-            statusText,
-          )}"></span> ${statusText}`;
+          statusBadge.innerHTML = `<span class="status-dot ${slugify(statusText)}"></span> ${statusText}`;
 
           const reportIdField = modal.querySelector("#reportIdField");
           if (reportIdField) {
@@ -129,7 +133,8 @@ const setupModal = (triggerSelector, modalId) => {
 };
 
 // Setup both modals
-setupModal('[data-lucide="file-search"]', "infoModal"); // Report details modal
+setupModal('[data-lucide="file-search"]', "infoModal");
+setupModal('[data-lucide="pen"]', "infoModal");
 setupModal(".head .left button", "addReportModal");
 
 //Handle Image/Media Clicks

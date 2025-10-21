@@ -1,6 +1,13 @@
 {% load static %}
 
 <div id="infoModal" class="modal">
+  {% if request.path == '/cases/' or request.path == '/cases/closed/' %}
+    <button class="modal-nav-btn left" id="viewSightingsBtn">
+      <i data-lucide="move-left"></i>
+      <span>View Sightings</span>
+    </button>
+  {% endif %}
+
   <div class="modal-content">
     <span class="close">&times;</span>
     <div class="modalHead">
@@ -20,10 +27,7 @@
             </button>
 
             <div class="media">
-              <img
-                src="{% static 'images/samplePerson.jpeg' %}"
-                alt="Report image"
-              />
+              <img src="{% static 'images/samplePerson.jpeg' %}" alt="Report image" />
               <!-- or -->
               <!-- <video src="{% static 'videos/sample.mp4' %}" controls></video> -->
             </div>
@@ -42,131 +46,111 @@
         </div>
       </div>
       <div class="right">
-        <div class="modalSection">
-          <h3 class="poppins-medium">Personal Information</h3>
-          <div class="detail">
-            <label for="fullName" class="poppins-regular">Full Name</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              class="poppins-regular"
-              readonly
-            />
+        <form action="{% url 'update_report' %}" method="post" class="two-column">
+          {% csrf_token %}
+          <input type="hidden" name="report_id" id="reportIdField" />
+          <div class="modalSection">
+            <h3 class="poppins-medium">Personal Information</h3>
+            <div class="detail">
+              <label for="fullName" class="poppins-regular">Full Name</label>
+              <input type="text" id="fullName" name="fullName" class="poppins-regular" />
+            </div>
+
+            <div class="two-column">
+              <div class="detail">
+                <label for="age" class="poppins-regular">Age</label>
+                <input type="number" id="age" name="age" class="poppins-regular" />
+              </div>
+              <div class="detail">
+                <select id="gender" name="gender" required>
+                  <option value="" disabled selected>Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div class="two-column">
+          <div class="modalSection">
+            <h3 class="poppins-medium">Last Seen</h3>
+            <div class="two-column">
+              <div class="detail">
+                <label for="last_seen_date" class="poppins-regular">Date</label>
+                <input
+                  type="date"
+                  id="last_seen_date"
+                  name="last_seen_date"
+                  class="poppins-regular"
+                />
+              </div>
+              <div class="detail">
+                <label for="last_seen_time" class="poppins-regular">Time</label>
+                <input
+                  type="time"
+                  id="last_seen_time"
+                  name="last_seen_time"
+                  class="poppins-regular"
+                />
+              </div>
+            </div>
             <div class="detail">
-              <label for="age" class="poppins-regular">Age</label>
+              <label for="clothing" class="poppins-regular">Clothing</label>
+              <input type="text" id="clothing" name="clothing" class="poppins-regular" />
+            </div>
+          </div>
+
+          <div class="modalSection">
+            <h3 class="poppins-medium">Description</h3>
+            <div class="detail">
+              <label for="description" class="poppins-regular">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                rows="6"
+                class="poppins-regular"
+              ></textarea>
+            </div>
+            <div class="detail">
+              <label for="reported_at" class="poppins-regular">Reported At</label>
               <input
                 type="text"
-                id="age"
-                name="age"
-                class="poppins-regular"
-                readonly
-              />
-            </div>
-            <div class="detail">
-              <label for="gender" class="poppins-regular">Gender</label>
-              <input
-                type="text"
-                id="gender"
-                name="gender"
+                id="reported_at"
+                name="reported_at"
                 class="poppins-regular"
                 readonly
               />
             </div>
           </div>
-        </div>
 
-        <div class="modalSection">
-          <h3 class="poppins-medium">Last Seen</h3>
-          <div class="two-column">
-            <div class="detail">
-              <label for="last_seen_date" class="poppins-regular">Date</label>
-              <input
-                type="date"
-                id="last_seen_date"
-                name="last_seen_date"
-                class="poppins-regular"
-                readonly
-              />
-            </div>
-            <div class="detail">
-              <label for="last_seen_time" class="poppins-regular">Time</label>
-              <input
-                type="time"
-                id="last_seen_time"
-                name="last_seen_time"
-                class="poppins-regular"
-                readonly
-              />
+          <div class="modalSection">
+            <h3 class="poppins-medium">Action</h3>
+            <div class="flex-row">
+              <div class="detail">
+                <label for="statusSelect" class="poppins-regular">Options</label>
+                <select name="status" id="statusSelect" required>
+                  <option value="" disabled>Select status</option>
+                  {% for key, value in status_choices %}
+                    <option value="{{ key }}">{{ value }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="detail">
+                <button type="submit" class="poppins-regular">Update</button>
+              </div>
             </div>
           </div>
-          <div class="detail">
-            <label for="clothing" class="poppins-regular">Clothing</label>
-            <input
-              type="text"
-              id="clothing"
-              name="clothing"
-              class="poppins-regular"
-              readonly
-            />
-          </div>
-        </div>
-
-        <div class="modalSection">
-          <h3 class="poppins-medium">Description</h3>
-          <div class="detail">
-            <label for="description" class="poppins-regular">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              rows="6"
-              readonly
-              class="poppins-regular"
-            ></textarea>
-          </div>
-          <div class="detail">
-            <label for="reported_at" class="poppins-regular">Reported At</label>
-            <input
-              type="text"
-              id="reported_at"
-              name="reported_at"
-              class="poppins-regular"
-              readonly
-            />
-          </div>
-        </div>
-
-        <div class="modalSection">
-          <h3 class="poppins-medium">Action</h3>
-          <form
-            action="{% url 'update_report_status' %}"
-            method="post"
-            class="two-column"
-          >
-            {% csrf_token %}
-            <input type="hidden" name="report_id" id="reportIdField" />
-
-            <div class="detail">
-              <label for="statusSelect" class="poppins-regular">Options</label>
-              <select name="status" id="statusSelect" required>
-                <option value="" disabled>Select status</option>
-                {% for key, value in status_choices %}
-                <option value="{{ key }}">{{ value }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="detail">
-              <button type="submit" class="poppins-regular">Update</button>
-            </div>
-          </form>
-        </div>
+        </form>
       </div>
     </div>
   </div>
+
+  {% if request.path == '/cases/' or request.path == '/cases/closed/' %}
+    <button class="modal-nav-btn right" id="addSightingsBtn">
+      <span>Add Sightings</span>
+      <i data-lucide="move-right"></i>
+    </button>
+  {% endif %}
 </div>
 
 <div id="imgModal" class="image-modal">
