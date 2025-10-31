@@ -1,0 +1,1 @@
+web: gunicorn findmeWeb.wsgi --log-file -
