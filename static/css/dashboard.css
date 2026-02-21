@@ -446,6 +446,17 @@ section {
   color: var(--subtext);
 }
 
+.emptyText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emptyText svg {
+  width: 18px;
+  height: 18px;
+}
+
 .reports-empty {
   font-size: 1em;
   color: var(--subtext);

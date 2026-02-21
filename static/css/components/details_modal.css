@@ -38,6 +38,11 @@
   transition: all 0.1s ease;
 }
 
+.detailsModal {
+  width: 850px;
+  max-width: 80%;
+}
+
 .modal.show .modal-content {
   transform: scale(1);
   opacity: 1;

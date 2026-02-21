@@ -43,6 +43,13 @@
   color: var(--secondary);
 }
 
+.bottomContainer .rightSide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1em;
+}
+
 .button {
   border: none;
   background-color: #fff;
@@ -279,4 +286,20 @@ section {
 
 .swal-cancel:hover {
   background-color: #0e1a33 !important; /* darker primary */
+}
+
+.notification-container {
+  transition: all 0.3s ease;
+}
+
+.case-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 5rem;
+}
+
+.toggle-icon {
+  transition: transform 0.3s ease;
 }

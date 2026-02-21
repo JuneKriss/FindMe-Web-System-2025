@@ -13,6 +13,7 @@ from datetime import timedelta, datetime
 from django.db.models import Q, Max
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from collections import defaultdict
 import json
 import mimetypes
 
@@ -993,13 +994,13 @@ def update_report(request):
 
         if info_updated and status_updated:
             action_type = "report_info_updated"
-            title = f"Report #{report.report_id} details and status have been updated."
+            title = f"Report with ID: {report.report_id} details and status have been updated."
         elif info_updated:
             action_type = "report_info_updated"
-            title = f"Report #{report.report_id} information has been updated."
+            title = f"Report with ID: {report.report_id} information has been updated."
         else:  # only status updated
             action_type = "status_changed"
-            title = f"The status of report #{report.report_id} has been changed to {status}."
+            title = f"The status of report with ID: {report.report_id} has been changed to {status}."
 
         create_notification(action=action_type, title=title, related_report=report)
         messages.success(request, "Report updated successfully.")
@@ -1181,7 +1182,7 @@ def submit_sighting(request):
         # Create a notification entry
         create_notification(
             action="report_updated",
-            title=f"New sighting reported for report #{report.report_id} by {user.full_name or user.username}.",
+            title=f"New sighting reported for report with ID: {report.report_id} by {user.full_name or user.username}.",
             related_report=report,
         )
 
@@ -1334,6 +1335,8 @@ def notifications(request):
         messages.error(request, "User not found.")
         return redirect("login")
 
+    group_mode = request.GET.get("group")  # ?group=cases
+
     user_notifications = (
         UserNotification.objects
         .filter(user=user, is_deleted=False)
@@ -1343,6 +1346,8 @@ def notifications(request):
     now = timezone.now()
     today = now.date()
     yesterday = today - timedelta(days=1)
+
+    unread_count = user_notifications.filter(is_read=False).count()
 
     processed_notifications = []
     for user_notif in user_notifications:
@@ -1374,6 +1379,27 @@ def notifications(request):
             "display_time": display_time,
         })
 
+        # GROUP BY CASES
+    if group_mode == "cases":
+        grouped_by_case = defaultdict(list)
+
+        for item in processed_notifications:
+            report = item["notif"].related_report
+
+            if report:
+                key = f"Case #{report.report_id} - {report.full_name}"
+            else:
+                key = "No Related Case"
+
+            grouped_by_case[key].append(item)
+
+        return render(request, "notifications.html", {
+            "username": user.username,
+            "grouped_notifications_by_case": dict(grouped_by_case),
+            "group_mode": "cases",
+            "unread_count": unread_count,
+        })
+
     # Group notifications (optional — like your HTML layout)
     grouped_notifications = {
         "today": [n for n in processed_notifications if n["notif"].created_at.date() == today],
@@ -1384,6 +1410,8 @@ def notifications(request):
     return render(request, "notifications.html", {
         "username": user.username,
         "grouped_notifications": grouped_notifications,
+        "group_mode": "time",
+        "unread_count": unread_count,
     })
 
 @csrf_exempt

@@ -13,59 +13,33 @@
       </div>
       <div class="textContent">
         <h2 class="poppins-medium">Create a Report</h2>
-        <p class="poppins-regular">
-          Complete the form below to register your report.
-        </p>
+        <p class="poppins-regular">Complete the form below to register your report.</p>
       </div>
     </div>
 
-    <form
-      method="post"
-      action="{% url 'submit_report' %}"
-      enctype="multipart/form-data"
-    >
+    <form method="post" action="{% url 'submit_report' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="side-modalSection">
         <h3 class="poppins-medium">Missing Person Information</h3>
         <div class="two-column">
           <div class="detail">
             <label for="first_name" class="poppins-regular">First Name</label>
-            <input
-              type="text"
-              id="first_name"
-              name="first_name"
-              class="poppins-regular"
-              required
-            />
+            <input type="text" id="first_name" name="first_name" class="poppins-regular" required />
           </div>
           <div class="detail">
             <label for="last_name" class="poppins-regular">Last Name</label>
-            <input
-              type="text"
-              id="last_name"
-              name="last_name"
-              class="poppins-regular"
-              required
-            />
+            <input type="text" id="last_name" name="last_name" class="poppins-regular" required />
           </div>
         </div>
         <div class="two-column">
           <div class="detail">
             <label for="age" class="poppins-regular">Age</label>
-            <input
-              type="number"
-              id="age"
-              name="age"
-              class="poppins-regular"
-              required
-            />
+            <input type="number" id="age" name="age" class="poppins-regular" required />
           </div>
           <div class="detail">
             <label for="gender" class="poppins-regular">Gender</label>
             <select name="gender" id="gender" required>
-              <option value="" disabled selected class="poppins-regular">
-                Select gender
-              </option>
+              <option value="" disabled selected class="poppins-regular">Select gender</option>
               <option value="Male" class="poppins-regular">Male</option>
               <option value="Female" class="poppins-regular">Female</option>
             </select>
@@ -99,13 +73,11 @@
         </div>
         <div class="detail">
           <label for="clothing" class="poppins-regular">Clothing</label>
-          <input
-            type="text"
-            id="clothing"
-            name="clothing"
-            class="poppins-regular"
-            required
-          />
+          <input type="text" id="clothing" name="clothing" class="poppins-regular" required />
+          <span class="poppins-regular helper"
+            ><span class="asterisk">*</span> Describe what the person was last seen wearing (colors,
+            shoes, accessories).</span
+          >
         </div>
         <div class="detail">
           <label for="location" class="poppins-regular">Location</label>
@@ -116,20 +88,22 @@
             class="poppins-regular"
             required
           ></textarea>
+          <span class="poppins-regular helper"
+            ><span class="asterisk">*</span> Include landmarks, street names, and nearby
+            places</span
+          >
         </div>
       </div>
       <div class="side-modalSection">
         <h3 class="poppins-medium">Description</h3>
         <div class="detail">
           <label for="notes" class="poppins-regular">Notes</label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows="6"
-            class="poppins-regular"
-            required
-          ></textarea>
+          <textarea id="notes" name="notes" rows="6" class="poppins-regular" required></textarea>
         </div>
+        <span class="poppins-regular helper"
+          ><span class="asterisk">*</span> Include identifying features such as tattoos, scars,
+          height, and any important information.</span
+        >
       </div>
       <div class="side-modalSection">
         <h3 class="poppins-medium">Media</h3>
@@ -141,8 +115,7 @@
                 <i data-lucide="images"></i>
                 <p class="poppins-regular">
                   Click to
-                  <span class="browse poppins-medium">Browse</span> and upload
-                  images
+                  <span class="browse poppins-medium">Browse</span> and upload images
                 </p>
                 <small class="poppins-regular">PNG, JPG</small>
               </div>
@@ -157,6 +130,10 @@
               hidden
             />
           </div>
+          <span class="poppins-regular helper"
+            ><span class="asterisk">*</span> Upload multiple photos if available. Avoid uploading
+            unrelated images.</span
+          >
         </div>
       </div>
       <div class="side-modalSection">

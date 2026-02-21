@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True") == "True"
@@ -96,19 +96,31 @@ load_dotenv()
 
 IS_PRODUCTION = os.getenv("RAILWAY_ENVIRONMENT") == "production"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("MYSQLDATABASE"),
-        "USER": os.getenv("MYSQLUSER"),
-        "PASSWORD": os.getenv("MYSQLPASSWORD"),
-        "HOST": os.getenv("MYSQLHOST"),
-        "PORT": os.getenv("MYSQLPORT"),
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+if IS_PRODUCTION:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MYSQLDATABASE"),
+            "USER": os.getenv("MYSQLUSER"),
+            "PASSWORD": os.getenv("MYSQLPASSWORD"),
+            "HOST": os.getenv("MYSQLHOST"),
+            "PORT": os.getenv("MYSQLPORT"),
+            "OPTIONS": {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:
+     DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": "findme_db",
+            "USER": "root",
+            "PASSWORD": "",
+            "HOST": "localhost",
+            "PORT": "3306",
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -150,6 +162,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Enable gzip and caching
 STORAGES = {
+     "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

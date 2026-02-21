@@ -1,0 +1,129 @@
+{% load static %}
+
+<div id="detailsModal" class="modal">
+  <div class="modal-content detailsModal">
+    <span class="close">&times;</span>
+    <div class="modalHead">
+      <div class="leftHead">
+        <div class="detailsIcon">
+          <i data-lucide="info"></i>
+        </div>
+      </div>
+      <div class="rightHead">
+        <h3 class="poppins-medium">Reporter Details</h3>
+        <p class="poppins-regular">
+          Details of the person who submitted this report for verification and follow-up.
+        </p>
+      </div>
+    </div>
+    <div class="modalBody">
+      <div class="detailModalSection">
+        <h3 class="poppins-medium">Account Information</h3>
+        <div class="two-column">
+          <div class="detail">
+            <label for="reporter_name" class="poppins-regular">Name</label>
+            <input
+              type="text"
+              id="reporter_name"
+              name="reporter_name"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+          <div class="detail">
+            <label for="reporter_role" class="poppins-regular">Role</label>
+            <input
+              type="text"
+              id="reporter_role"
+              name="reporter_role"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+        </div>
+        <div class="two-column">
+          <div class="detail">
+            <label for="reporter_status" class="poppins-regular">Account Status</label>
+            <input
+              type="text"
+              id="reporter_status"
+              name="reporter_status"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+          <div class="detail">
+            <label for="account_created_at" class="poppins-regular">Created At</label>
+            <input
+              type="text"
+              id="account_created_at"
+              name="account_created_at"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+        </div>
+      </div>
+      <div class="detailModalSection" id="familySection">
+        <h3 class="poppins-medium">Personal Information</h3>
+        <div class="two-column">
+          <div class="detail">
+            <label for="reporter_address" class="poppins-regular">Address</label>
+            <input
+              type="text"
+              id="reporter_address"
+              name="reporter_address"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+          <div class="detail">
+            <label for="reporter_contact" class="poppins-regular">Contact</label>
+            <input
+              type="text"
+              id="reporter_contact"
+              name="reporter_contact"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+        </div>
+      </div>
+      <div class="detailModalSection" id="volunteerSection">
+        <h3 class="poppins-medium">Personal Information</h3>
+        <div class="two-column">
+          <div class="detail">
+            <label for="reporter_skills" class="poppins-regular">Skills</label>
+            <input
+              type="text"
+              id="reporter_skills"
+              name="reporter_skills"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+          <div class="detail">
+            <label for="reporter_availability" class="poppins-regular">Availability</label>
+            <input
+              type="text"
+              id="reporter_availability"
+              name="reporter_availability"
+              class="poppins-regular"
+              readonly
+            />
+          </div>
+        </div>
+        <div class="detail">
+          <label for="reporter_location" class="poppins-regular">Location</label>
+          <textarea
+            id="reporter_location"
+            name="reporter_location"
+            rows="3"
+            class="poppins-regular"
+            readonly
+          ></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

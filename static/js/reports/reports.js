@@ -186,11 +186,20 @@ const updateTable = (results, isCasesPage) => {
           <td class="poppins-regular">${r.created_at}</td>
           <td class="poppins-regular ${statusClass}">${r.status}</td>
           <td>
-            <div class="actionIcon">
-              <i data-lucide="pen"></i>
-              <i data-lucide="message-circle"></i>
-            </div>
-          </td>
+                        <div class="actionIcon">
+                          <span title="Update Report">
+                            <i data-lucide="pen"></i>
+                          </span>
+
+                          <span title="Message">
+                            <i data-lucide="message-circle"></i>
+                          </span>
+
+                          <span title="Reporter Details">
+                            <i data-lucide="contact-round"></i>
+                          </span>
+                        </div>
+                      </td>
         </tr>`;
     } else {
       // ✅ REPORTS table row
@@ -216,9 +225,18 @@ const updateTable = (results, isCasesPage) => {
           <td class="poppins-regular ${statusClass}">${r.status}</td>
           <td>
             <div class="actionIcon">
-              <i data-lucide="file-search"></i>
-              <i data-lucide="message-circle"></i>
-            </div>
+              <span title="View Report">
+                <i data-lucide="file-search"></i>
+              </span>
+
+              <span title="Message">
+                <i data-lucide="message-circle"></i>
+              </span>
+
+              <span title="Reporter Details">
+                <i data-lucide="contact-round"></i>
+              </span>
+             </div>
           </td>
         </tr>`;
     }
@@ -229,7 +247,9 @@ const updateTable = (results, isCasesPage) => {
   }
 
   // ✅ Reinitialize modal triggers for new icons
+  setupModal('[data-lucide="pen"]', "infoModal");
   setupModal('[data-lucide="file-search"]', "infoModal");
+  setupModal('[data-lucide="contact-round"]', "detailsModal");
 };
 
 // helper functions

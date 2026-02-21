@@ -10,6 +10,7 @@
       rel="stylesheet"
     />
 
+    <link rel="stylesheet" href="{% static 'css/reports.css' %}" />
     <link rel="stylesheet" href="{% static 'css/cases.css' %}" />
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}" />
 
@@ -112,6 +113,21 @@
                             {"url": "{{ media.file.url }}", "type": "{{ media.file_type }}"}{% if not forloop.last %},{% endif %}
                           {% endfor %}
                         ]'
+                         data-reporter-role="{{ report.reporter.get_role_display }}"
+                        data-reporter-created="{{ report.reporter.created_at|date:'F d, Y g:i A' }}"
+                        data-reporter-name="{{ report.reporter.full_name }}"
+                        data-reporter-status="{{ report.reporter.is_active }}"
+
+                        {% if report.reporter.family_profile %}
+                        data-reporter-address="{{ report.reporter.family_profile.address }}"
+                        data-reporter-contact="{{ report.reporter.family_profile.contact_num }}"
+                        {% endif %}
+                        
+                        {% if report.reporter.volunteer_profile %}
+                        data-reporter-skills="{{ report.reporter.volunteer_profile.skills }}"
+                        data-reporter-availability="{{ report.reporter.volunteer_profile.availability }}"
+                        data-reporter-location="{{ report.reporter.volunteer_profile.location_area }}"
+                        {% endif %}
                       >
                       <!-- prettier-ignore-end -->
                       <td class="poppins-regular">{{ report.report_id }}</td>
@@ -128,8 +144,17 @@
                       </td>
                       <td>
                         <div class="actionIcon">
-                          <i data-lucide="pen"></i>
-                          <i data-lucide="message-circle"></i>
+                          <span title="Update Report">
+                            <i data-lucide="pen"></i>
+                          </span>
+
+                          <span title="Message">
+                            <i data-lucide="message-circle"></i>
+                          </span>
+
+                          <span title="Reporter Details">
+                            <i data-lucide="contact-round"></i>
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -178,6 +203,7 @@
     {% include 'components/report_details_modal.html' %}
     {% include 'components/add_sightings_modal.html' %}
     {% include 'components/message_box.html' %}
+    {% include 'components/reporter_details.html' %}
 
     <script>
       lucide.createIcons();

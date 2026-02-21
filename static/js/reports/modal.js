@@ -113,6 +113,52 @@ const setupModal = (triggerSelector, modalId) => {
         }
       }
 
+      if (modalId === "detailsModal") {
+        const row = e.target.closest("tr");
+        if (row) {
+          const role = row.dataset.reporterRole || "";
+          const familySection = modal.querySelector("#familySection");
+          const volunteerSection = modal.querySelector("#volunteerSection");
+
+          modal.querySelector("#reporter_name").value = row.dataset.reporterName || "";
+
+          modal.querySelector("#reporter_role").value = role;
+
+          modal.querySelector("#reporter_status").value =
+            row.dataset.reporterStatus === "True" ? "Active" : "Inactive";
+
+          modal.querySelector("#account_created_at").value = row.dataset.reporterCreated || "";
+
+          familySection.classList.add("hidden");
+          volunteerSection.classList.add("hidden");
+
+          if (role === "family") {
+            familySection.classList.remove("hidden");
+          } else if (role === "volunteer") {
+            volunteerSection.classList.remove("hidden");
+          }
+
+          // Family fields
+          const addressField = modal.querySelector("#reporter_address");
+          const contactField = modal.querySelector("#reporter_contact");
+
+          if (addressField) addressField.value = row.dataset.reporterAddress || "";
+
+          if (contactField) contactField.value = row.dataset.reporterContact || "";
+
+          // Volunteer fields
+          const skillsField = modal.querySelector("#reporter_skills");
+          const availabilityField = modal.querySelector("#reporter_availability");
+          const locationField = modal.querySelector("#reporter_location");
+
+          if (skillsField) skillsField.value = row.dataset.reporterSkills || "";
+
+          if (availabilityField) availabilityField.value = row.dataset.reporterAvailability || "";
+
+          if (locationField) locationField.value = row.dataset.reporterLocation || "";
+        }
+      }
+
       modal.classList.add("show");
     });
   });
@@ -135,6 +181,7 @@ const setupModal = (triggerSelector, modalId) => {
 // Setup both modals
 setupModal('[data-lucide="file-search"]', "infoModal");
 setupModal('[data-lucide="pen"]', "infoModal");
+setupModal('[data-lucide="contact-round"]', "detailsModal");
 setupModal(".head .left button", "addReportModal");
 
 //Handle Image/Media Clicks
