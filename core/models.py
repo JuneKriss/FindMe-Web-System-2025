@@ -64,6 +64,7 @@ class ReportCase(models.Model):
     notes = models.CharField(max_length=255)
 
     STATUS_CHOICES = [
+        ("PendingOTP", "Pending OTP"),
         ("Pending", "Pending"),
         ("Verified", "Verified"),
         ("In Progress", "In Progress"),
@@ -72,12 +73,21 @@ class ReportCase(models.Model):
         ("Closed - Deceased", "Closed - Deceased"),
         ("Closed - Unresolved", "Closed - Unresolved"), 
         ("Rejected", "Rejected"),
+        ("Cancelled", "Cancelled"),
     ]
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.full_name} - {self.status}"
+
+class ReportVerificationCode(models.Model):
+    report = models.ForeignKey(ReportCase, on_delete=models.CASCADE, related_name="otp_codes")
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        return self.created_at < timezone.now() - timedelta(minutes=3)
     
 class ReportAssistance(models.Model):
     assistance_id = models.AutoField(primary_key=True)
