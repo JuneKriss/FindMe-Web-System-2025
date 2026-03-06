@@ -8,8 +8,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from django.http import JsonResponse
-import datetime
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from django.db.models import Q, Max
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -779,8 +778,8 @@ def submit_report(request):
 
         # validate date
         try:
-            last_seen_date_obj = datetime.datetime.strptime(last_seen_date, "%Y-%m-%d").date()
-            if last_seen_date_obj > datetime.date.today():
+            last_seen_date_obj = datetime.strptime(last_seen_date, "%Y-%m-%d").date()
+            if last_seen_date_obj > date.today():
                 messages.error(request, "Please provide a valid last seen date.")
                 return redirect("reports")
         except ValueError:

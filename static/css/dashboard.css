@@ -201,7 +201,7 @@ section {
 
 .iconGroup {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4em;
 }
 
@@ -210,11 +210,18 @@ section {
   height: 1.3em;
   color: var(--primary);
   stroke-width: 1.5;
+  flex-shrink: 0;
 }
 
 .iconGroup span {
-  font-size: 0.875en;
+  font-size: 0.875em;
   color: var(--primary);
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bottomContainer a {
