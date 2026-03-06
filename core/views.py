@@ -29,7 +29,7 @@ from .serializers import ReportMessageSerializer, SightingSerializer, SightingMe
 from .serializers import UserNotificationSerializer
 
 #MODELS
-from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode, Notification, UserNotification, ReportAssistance, ReportMessage, ReportSighting, SightingMedia
+from .models import Account, Family, Volunteer, ReportCase, ReportMedia, EmailVerificationCode, Notification, UserNotification, ReportAssistance, ReportMessage, ReportSighting, SightingMedia, ReportVerificationCode
 
 # API
 import random
@@ -46,6 +46,9 @@ from django.db.models import Q
 
 # HELPER FUNCTION: Create Notification
 def create_notification(action, title, related_report, recipients):
+    if not related_report:
+        raise ValueError("Notification must be tied to a specific report")
+
     notification = Notification.objects.create(
         action=action,
         title=title,
@@ -184,6 +187,7 @@ class VolunteerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(account=self.request.user)
 
+
 class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -191,13 +195,90 @@ class ReportViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Default list view
         if user.role == "volunteer":
-            # Return all reports (including ones they assist)
-            return ReportCase.objects.exclude(reporter=user).order_by("-created_at")
-
+            return ReportCase.objects.exclude(reporter=user).exclude(status='Cancelled').order_by("-created_at")
+        
         # Family sees only their own reports
         return ReportCase.objects.filter(reporter=user).order_by("-created_at")
+    
+     # OVERRIDE CREATE → send OTP
+    def perform_create(self, serializer):
+        report = serializer.save(
+            reporter=self.request.user,
+            status="PendingOTP"   
+        )
+
+        otp_code = str(random.randint(100000, 999999))
+        ReportVerificationCode.objects.create(report=report, code=otp_code)
+
+        send_mail(
+            "Verify your FindMe Report",
+            f"Your report verification code is {otp_code}. It expires in 5 minutes.",
+            settings.DEFAULT_FROM_EMAIL,
+            [self.request.user.email],
+            fail_silently=False,
+        )
+
+    #VERIFY REPORT OTP
+    @action(detail=False, methods=["post"], url_path="verify-report")
+    def verify_report(self, request):
+        report_id = request.data.get("report_id")
+        code = request.data.get("code")
+
+        try:
+            report = ReportCase.objects.get(
+                report_id=report_id,
+                reporter=request.user
+            )
+        except ReportCase.DoesNotExist:
+            return Response({"error": "Invalid report"}, status=400)
+
+        try:
+            otp_entry = ReportVerificationCode.objects.filter(
+                report=report,
+                code=code
+            ).latest("created_at")
+
+            if otp_entry.is_expired():
+                return Response({"error": "Code expired"}, status=400)
+
+            report.status = "Pending"
+            report.save(update_fields=["status"])
+
+            return Response({"success": "Report verified"})
+        except ReportVerificationCode.DoesNotExist:
+            return Response({"error": "Invalid code"}, status=400)
+        
+    # RESEND REPORT OTP
+    @action(detail=False, methods=["post"], url_path="resend-report-code")
+    def resend_report_code(self, request):
+        report_id = request.data.get("report_id")
+
+        try:
+            report = ReportCase.objects.get(
+                report_id=report_id,
+                reporter=request.user
+            )
+        except ReportCase.DoesNotExist:
+            return Response({"error": "Invalid report"}, status=400)
+
+        recent = ReportVerificationCode.objects.filter(report=report).order_by("-created_at").first()
+        if recent and recent.created_at > timezone.now() - timedelta(minutes=1):
+            return Response({"error": "Please wait before requesting new code"}, status=400)
+
+        otp_code = str(random.randint(100000, 999999))
+        ReportVerificationCode.objects.create(report=report, code=otp_code)
+
+        send_mail(
+            "Verify your FindMe Report",
+            f"Your new verification code is {otp_code}. It expires in 5 minutes.",
+            settings.DEFAULT_FROM_EMAIL,
+            [request.user.email],
+            fail_silently=False,
+        )
+
+        return Response({"success": "New OTP sent"})
+    
 
     @action(detail=False, methods=['get'])
     def available(self, request):
@@ -207,7 +288,7 @@ class ReportViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Access denied.'}, status=403)
 
         reports = ReportCase.objects.filter(
-            status='Verified'  # <-- Only verified reports
+            status='Verified'  # Only verified reports
         ).exclude(
             reporter=user
         ).exclude(
@@ -243,14 +324,34 @@ class ReportViewSet(viewsets.ModelViewSet):
         )
         return Response({'detail': 'You are now assisting this report.'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+            user = request.user
+            report = self.get_object()
+
+            if report.reporter != user:
+                return Response({'detail': 'You can only cancel your own reports.'}, status=403)
+
+            if report.status != 'Pending':
+                return Response({'detail': 'Only pending reports can be cancelled.'}, status=400)
+
+            report.status = 'Cancelled'
+            report.save(update_fields=['status'])
+
+            return Response({'detail': 'Report has been cancelled successfully.'})
+    
+    @action(detail=False, methods=['get'], url_path='my_assisted')
     def my_assisted(self, request):
-        # Reports the volunteer is already assisting
         user = request.user
         if user.role != 'volunteer':
             return Response({'detail': 'Access denied.'}, status=403)
-        
-        reports = ReportCase.objects.filter(assistances__volunteer=user).distinct()
+
+        # Fetch reports the volunteer is currently assisting
+        reports = ReportCase.objects.filter(
+            assistances__volunteer=user,
+            assistances__status='active'
+        ).order_by('-created_at')
+
         serializer = self.get_serializer(reports, many=True)
         return Response(serializer.data)
 
@@ -335,39 +436,51 @@ class SightingMediaViewSet(viewsets.ModelViewSet):
 
 class UserNotificationViewSet(viewsets.ModelViewSet):
     serializer_class = UserNotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
+        queryset = UserNotification.objects.filter(
+            user=user,
+            is_deleted=False
+        ).select_related("notification")
 
-        return UserNotification.objects.filter(
-            user=user,             
-            is_deleted=False,     
-        ).order_by('-notification__created_at')
+        report_id = self.request.query_params.get("report")
 
+        if report_id:
+            queryset = queryset.filter(
+                notification__related_report__report_id=report_id
+            )
 
-    @action(detail=True, methods=['post'])
+        return queryset.order_by("-notification__created_at")
+
+    @action(detail=True, methods=["post"])
     def mark_read(self, request, pk=None):
         notif = self.get_object()
         notif.mark_as_read()
-        return Response({'status': 'read'})
+        return Response({"status": "read"})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def mark_deleted(self, request, pk=None):
         notif = self.get_object()
         notif.mark_as_deleted()
-        return Response({'status': 'deleted'})
+        return Response({"status": "deleted"})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def unread_count(self, request):
         count = UserNotification.objects.filter(
             user=request.user,
             is_read=False,
             is_deleted=False
         ).count()
-        return Response({'unread': count})
+        return Response({"unread": count})
 
 # API
+# API
+# API
+# API
+# API
+# API
+
 
 # Helper Functions
 def create_notification(action, title, related_report=None, recipients=None):

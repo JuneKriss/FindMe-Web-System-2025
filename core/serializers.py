@@ -80,7 +80,7 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportCase
         fields = "__all__"
-        read_only_fields = ["report_id", "reporter", "created_at", "media", 'assistances']
+        read_only_fields = ["report_id", "reporter", "created_at", "media", 'assistances', 'status']
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -127,10 +127,16 @@ class NotificationSerializer(serializers.ModelSerializer):
 class UserNotificationSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source='notification.title', read_only=True)
     action = serializers.CharField(source='notification.action', read_only=True)
+
     related_report = serializers.IntegerField(
-        source='notification.related_report.id', read_only=True
+        source='notification.related_report.report_id',  # ✅ FIX HERE
+        read_only=True
     )
-    created_at = serializers.DateTimeField(source='notification.created_at', read_only=True)
+
+    created_at = serializers.DateTimeField(
+        source='notification.created_at',
+        read_only=True
+    )
 
     class Meta:
         model = UserNotification
@@ -142,5 +148,5 @@ class UserNotificationSerializer(serializers.ModelSerializer):
             'created_at',
             'is_read',
             'read_at',
-            'is_deleted', 
+            'is_deleted',
         ]
