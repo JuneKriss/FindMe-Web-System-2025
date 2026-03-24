@@ -419,7 +419,6 @@ class SightingViewSet(viewsets.ModelViewSet):
                 f"on Case #{sighting.report.report_id} you reported"
             ),
             related_report=sighting.report,
-            recipients=[sighting.report.reporter]
         )
 
 class SightingMediaViewSet(viewsets.ModelViewSet):
@@ -1106,13 +1105,13 @@ def update_report(request):
 
         if info_updated and status_updated:
             action_type = "report_info_updated"
-            title = f"Report with ID: {report.report_id} details and status have been updated."
+            title = f"Details and status has been updated on {report.reporter}'s report with ID : {report.report_id}"
         elif info_updated:
             action_type = "report_info_updated"
-            title = f"Report with ID: {report.report_id} information has been updated."
+            title = f"Information has been updated on {report.reporter}'s report with ID : {report.report_id}"
         else:  # only status updated
             action_type = "status_changed"
-            title = f"The status of report with ID: {report.report_id} has been changed to {status}."
+            title = f"Status has been changed to {status} on {report.reporter}'s report with ID : {report.report_id}"
 
         create_notification(action=action_type, title=title, related_report=report)
         messages.success(request, "Report updated successfully.")
@@ -1294,7 +1293,7 @@ def submit_sighting(request):
         # Create a notification entry
         create_notification(
             action="report_updated",
-            title=f"New sighting reported for report with ID: {report.report_id} by {user.full_name or user.username}.",
+            title=f"{user.full_name or user.username} posted new sightings on {report.reporter}'s report with ID : {report.report_id}",
             related_report=report,
         )
 
@@ -1662,7 +1661,7 @@ def send_report_message(request, report_id):
 
     create_notification(
         action="new_message",
-        title=f"New message from {user.full_name or user.username} in report ID: {report.report_id}",
+        title=f"{report.reporter}'s report with ID : {report.report_id} has new message/s from {user.full_name or user.username}",
         related_report=report
     )
 

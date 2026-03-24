@@ -138,7 +138,6 @@
                   <th class="poppins-medium">Reporter</th>
                   <th class="poppins-medium">Status</th>
                   <th class="poppins-medium">Last Update</th>
-                  <th class="poppins-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,12 +174,6 @@
                         {% else %}
                           {{ case.created_at|date:"F j, Y" }}
                         {% endif %}
-                      </td>
-                      <td>
-                        <div class="actionIcon">
-                          <i data-lucide="pen"></i>
-                          <i data-lucide="info"></i>
-                        </div>
                       </td>
                     </tr>
                   {% endfor %}
