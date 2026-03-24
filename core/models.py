@@ -197,11 +197,13 @@ class ReportSighting(models.Model):
         on_delete=models.CASCADE,
         limit_choices_to={'role': 'volunteer'},
         related_name='volunteer_sightings',
-        null=True,  # ✅ ADD THIS
-        blank=True,  # ✅ optional but good for admin
+        null=True,
+        blank=True,
     )
     description = models.TextField()
     location = models.CharField(max_length=255)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     date_seen = models.DateField()
     time_seen = models.TimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -164,6 +164,22 @@ if (viewSightingsBtn && sightingsModal) {
             <p>${s.description}</p>
           `;
 
+          const bottomButtons = document.createElement("div");
+          bottomButtons.classList.add("bottomButtons");
+
+          // ----- See Map Button -----
+          const seeMapBtn = document.createElement("button");
+          seeMapBtn.classList.add("see-map");
+          seeMapBtn.innerHTML = `
+            <i data-lucide="map-pin"></i>
+            <span class="poppins-regular">See Map</span>
+            `;
+          seeMapBtn.addEventListener("click", () => {
+            openMapModal(s); // pass current sighting
+          });
+
+          bottomButtons.appendChild(seeMapBtn);
+
           if (s.media && s.media.length > 0) {
             const seePhotosBtn = document.createElement("button");
             seePhotosBtn.classList.add("see-more");
@@ -176,9 +192,13 @@ if (viewSightingsBtn && sightingsModal) {
               const media = JSON.parse(seePhotosBtn.dataset.media);
               openImageModal(media);
             });
-            item.appendChild(seePhotosBtn);
+            bottomButtons.appendChild(seePhotosBtn);
           }
 
+          // Append buttons to the item
+          item.appendChild(bottomButtons);
+
+          // ----- Append the whole item to the sightingsBody -----
           sightingsBody.appendChild(item);
         });
 
@@ -243,3 +263,63 @@ function showImage() {
     dotsContainer.appendChild(dot);
   });
 }
+
+// ---------- Map Modal Logic ----------
+let mapInstance = null;
+
+function openMapModal(sighting) {
+  const mapModal = document.getElementById("mapModal");
+  const mapContainer = document.getElementById("mapContainer");
+
+  // destroy old instance
+  if (mapInstance) {
+    mapInstance.remove();
+    mapInstance = null;
+  }
+
+  // clear container
+  mapContainer.innerHTML = "";
+
+  // show modal first
+  mapModal.classList.add("show");
+
+  // init map after modal is painted
+  setTimeout(() => {
+    const lat = parseFloat(sighting.latitude);
+    const lng = parseFloat(sighting.longitude);
+
+    mapInstance = L.map("mapContainer", {
+      center: [lat, lng],
+      zoom: 25,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(mapInstance);
+
+    L.marker([lat, lng])
+      .addTo(mapInstance)
+      .bindPopup(`<b>${sighting.volunteer}</b><br>${sighting.location}`)
+      .openPopup();
+
+    setTimeout(() => {
+      mapInstance.invalidateSize();
+    }, 100);
+  }, 300);
+}
+
+function closeMapModal() {
+  const mapModal = document.getElementById("mapModal");
+  mapModal.classList.remove("show");
+  if (mapInstance) {
+    mapInstance.remove();
+    mapInstance = null;
+  }
+}
+
+document.getElementById("mapModalClose").addEventListener("click", closeMapModal);
+
+document.getElementById("mapModal").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("mapModal")) closeMapModal();
+});

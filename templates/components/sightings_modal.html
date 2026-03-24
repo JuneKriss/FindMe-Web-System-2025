@@ -27,10 +27,16 @@
         <p class="sighting-description poppins-regular">
           Witness reported seeing someone matching the description near the market area.
         </p>
-        <button class="see-more">
-          <span class="poppins-regular">See Photos</span>
-          <i data-lucide="arrow-right"></i>
-        </button>
+        <div class="bottomButtons">
+          <button class="see-map">
+            <i data-lucide="map-pin"></i>
+            <span>See Map</span>
+          </button>
+          <button class="see-more">
+            <span class="poppins-regular">See Photos</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
       </div>
       <div class="sighting-item poppins-regular">
         <div class="sighting-header">
@@ -56,6 +62,13 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="mapModal" class="map-modal">
+  <div class="map-modal-wrapper">
+    <button class="map-modal-close" id="mapModalClose">&times;</button>
+    <div id="mapContainer"></div>
   </div>
 </div>
 

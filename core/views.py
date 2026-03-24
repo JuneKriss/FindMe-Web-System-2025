@@ -404,19 +404,17 @@ class SightingViewSet(viewsets.ModelViewSet):
         return ReportSighting.objects.all().order_by('-created_at')
 
     def perform_create(self, serializer):
-        # 1) save sighting first, without manually injecting volunteer
         sighting = serializer.save()
 
-        # 2) safely assign volunteer AFTER save
-        sighting.volunteer = self.request.user
-        sighting.save(update_fields=["volunteer"])
+        if self.request.user.role == "volunteer":
+            sighting.volunteer = self.request.user
+            sighting.save(update_fields=["volunteer"])
 
-        # 3) now `sighting` is valid → you can safely trigger notification
         create_notification(
             action="new_sighting",
             title=(
-                f"New sighting reported by Volunteer {self.request.user.full_name} "
-                f"on Case #{sighting.report.report_id} you reported"
+                f"New sighting reported by {self.request.user.full_name} "
+                f"on Case #{sighting.report.report_id}"
             ),
             related_report=sighting.report,
         )
@@ -1335,6 +1333,8 @@ def get_sightings(request, report_id):
             "time_seen": sighting.time_seen.strftime("%I:%M %p") if sighting.time_seen else "",
             "media": media_list,
             "created_at": sighting.created_at.strftime("%B %d, %Y, %I:%M %p"),
+            "latitude": sighting.latitude,
+            "longitude": sighting.longitude
         })
 
     return JsonResponse({"sightings": data})
